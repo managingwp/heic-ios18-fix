@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Run shellcheck
+        run: shellcheck -x heic-fix.sh tests/*.sh
+
+  container-test:
+    name: Ubuntu ${{ matrix.ubuntu }} (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ubuntu: "22.04"
+            php: "8.3"
+          - ubuntu: "24.04"
+            php: "8.3"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run container test
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo:ro" \
+            -e PHP_VER="${{ matrix.php }}" \
+            -e JOBS=4 \
+            "ubuntu:${{ matrix.ubuntu }}" \
+            bash /repo/tests/run-container-test.sh

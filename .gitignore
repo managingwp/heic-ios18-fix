@@ -1,0 +1,20 @@
+# OS and editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Local builds and logs
+src/
+dist/
+*.log
+*.tmp
+tests/tmp/
+
+# Python / Node leftovers from local helper scripts
+__pycache__/
+node_modules/
+
+# Keep the real sample and its checksums in the repository.
+!samples/failure_magick.HEIC
+!samples/SHA256SUMS
