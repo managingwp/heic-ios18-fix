@@ -957,6 +957,10 @@ check_php_version() {
 }
 
 cmd_check() {
+    if [[ $PLATFORM == "runcloud" ]]; then
+        not_implemented_runcloud "check"
+        return 2
+    fi
     if (( ! QUIET )); then
         printf '%sheic-fix.sh check%s\n' "$C_BOLD" "$C_RESET"
         printf 'platform: %s\n' "$PLATFORM"

@@ -61,6 +61,6 @@ Send a pull request with the verified paths and a `verify` transcript.
 
 * The script detects RunCloud by the presence of `/RunCloud`.
 * `build` still uses `apt-get` with needrestart disabled.
-* Do not run the script's `php`, `enable`, `rollback` or `verify` commands on
-  RunCloud until the hooks are implemented; they exit with an explicit
-  not-implemented error instead of making a wrong change.
+* Do not run the script's `check`, `php`, `enable`, `rollback` or `verify`
+  commands on RunCloud until the hooks are implemented; they exit with an
+  explicit not-implemented error instead of making a wrong change.
