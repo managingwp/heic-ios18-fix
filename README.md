@@ -332,7 +332,8 @@ that needs verification is marked `TODO(runcloud)` in the script. See
 
 Re-run `check` (or `verify`) after:
 
-* GridPane/RunCloud stack updates,
+* platform stack updates (GridPane; RunCloud PHP wiring is still
+  `TODO(runcloud)`),
 * security updates that touch ImageMagick, libheif, PHP or GD,
 * PHP upgrades (a new PHP version needs its own Imagick build),
 * restoring a server snapshot.

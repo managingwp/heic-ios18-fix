@@ -1552,7 +1552,8 @@ build_imagick() {
     local cached="$SRC/imagick-src-$RESOLVED_IMAGICK"
     local srcdir="$SRC/imagick-$RESOLVED_IMAGICK-php$ver"
     local logfile="$LOGS/imagick-$ver-$RESOLVED_IMAGICK.log"
-    if [[ ! -d $cached ]]; then
+    if [[ ! -d "$cached/.git" ]]; then
+        rm -rf "$cached"
         log "cloning Imagick $RESOLVED_IMAGICK"
         if ! git clone --depth 1 --branch "$RESOLVED_IMAGICK" \
             https://github.com/Imagick/imagick.git "$cached" >>"$logfile" 2>&1; then
