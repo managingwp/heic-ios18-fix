@@ -33,6 +33,7 @@ function hfm_admin_assert( $condition, $label ) {
  * @return string
  */
 function hfm_expect_redirect( callable $callback ) {
+	remove_all_filters( 'wp_redirect' );
 	add_filter(
 		'wp_redirect',
 		static function ( $location ) {
@@ -125,27 +126,28 @@ hfm_admin_assert( false !== strpos( $settings_html, 'hfm_settings_group' ), 'set
 hfm_admin_assert( false === strpos( $settings_html, 'admin-canary-secret-987654' ), 'settings page masks stored secrets' );
 hfm_admin_assert( false !== strpos( $settings_html, 'Stored encrypted' ), 'settings page describes the encrypted secret state' );
 
+$suffix        = strtolower( wp_generate_password( 8, false ) );
 $subscriber_id = wp_insert_user(
 	array(
-		'user_login' => 'hfm-subscriber-' . wp_rand( 1000, 9999 ),
+		'user_login' => 'hfm-subscriber-' . $suffix,
 		'user_pass'  => wp_generate_password( 24 ),
-		'user_email' => 'hfm-subscriber@example.test',
+		'user_email' => 'hfm-subscriber-' . $suffix . '@example.test',
 		'role'       => 'subscriber',
 	)
 );
 hfm_admin_assert( ! is_wp_error( $subscriber_id ), 'creates a subscriber fixture' );
 
 wp_set_current_user( (int) $subscriber_id );
-hfm_post( array( 'hfm_run_check_now_nonce' => wp_create_nonce( 'hfm_run_check_now' ) );
+hfm_post( array( 'hfm_run_check_now_nonce' => wp_create_nonce( 'hfm_run_check_now' ) ) );
 $message = hfm_expect_die( array( $admin, 'handle_run_check_now' ) );
 hfm_admin_assert( false !== stripos( $message, 'not allowed' ), 'a valid nonce without manage_options is denied' );
 
 wp_set_current_user( $admin_id );
-$_POST = array( 'hfm_run_check_now_nonce' => 'invalid' );
+hfm_post( array( 'hfm_run_check_now_nonce' => 'invalid' ) );
 $message = hfm_expect_die( array( $admin, 'handle_run_check_now' ) );
 hfm_admin_assert( '' !== $message, 'an invalid nonce is rejected before any probe runs' );
 
-$_POST = array(
+hfm_post( array(
 	'hfm_reset_baseline_nonce' => wp_create_nonce( 'hfm_reset_baseline' ),
 	'hfm_confirm_reset'        => '0',
 ) );

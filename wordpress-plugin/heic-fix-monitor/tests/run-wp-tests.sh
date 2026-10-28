@@ -98,13 +98,13 @@ assert_eq "$secret_roundtrip" "roundtrip|no-plaintext" "secrets round-trip throu
 
 notify_output=$(wp_cli eval-file /var/www/html/wp-content/plugins/$PLUGIN/tests/notification-tests.php 2>&1) || true
 printf '%s\n' "$notify_output"
-if printf '%s\n' "$notify_output" | grep -q '^FAIL:'; then
+if printf '%s\n' "$notify_output" | grep -Eq '^FAIL:|Parse error'; then
 	fail "notification tests"
 fi
 
 admin_output=$(wp_cli eval-file /var/www/html/wp-content/plugins/$PLUGIN/tests/admin-tests.php 2>&1) || true
 printf '%s\n' "$admin_output"
-if printf '%s\n' "$admin_output" | grep -q '^FAIL:'; then
+if printf '%s\n' "$admin_output" | grep -Eq '^FAIL:|Parse error'; then
 	fail "admin tests"
 fi
 
