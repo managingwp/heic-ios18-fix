@@ -143,3 +143,6 @@ fingerprint, and sends one alert per regression or recovery by email, Slack or
 JSON webhook. It also provides `wp heic-monitor check --notify` for system
 cron. The cron and monit examples above remain the right choice for servers
 without WordPress.
+
+Download the installable ZIP from the
+[plugin download page](https://managingwp.github.io/heic-ios18-fix/plugin-download/).

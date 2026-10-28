@@ -105,6 +105,7 @@ Published site: <https://managingwp.github.io/heic-ios18-fix/>
 | [Samples](docs/samples.md) | Sample rules and synthetic files |
 | [Monitoring](docs/monitoring.md) | Cron, monit and alerts |
 | [WordPress monitor](wordpress-plugin/heic-fix-monitor/docs/configuration.md) | Read-only plugin with transition alerts and WP-CLI |
+| [Plugin download](https://managingwp.github.io/heic-ios18-fix/plugin-download/) | Installable WordPress ZIP and plugin release history |
 | [Testing](docs/testing.md) | Container tests and CI |
 | [Alternatives](docs/alternatives.md) | Upload conversion, browser WASM, OS upgrade |
 | [References](docs/references.md) | Upstream issues and discussions |

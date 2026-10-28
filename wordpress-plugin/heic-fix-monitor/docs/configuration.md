@@ -4,6 +4,9 @@ The plugin is a read-only monitor for the iOS 18 HEIC/Imagick repair described
 at <https://managingwp.github.io/heic-ios18-fix/>. It never builds, enables,
 disables, rolls back or repairs anything on the server.
 
+Download the installable ZIP from the
+[plugin download page](https://managingwp.github.io/heic-ios18-fix/plugin-download/).
+
 ## Requirements
 
 - WordPress 6.4 or newer, PHP 8.0 or newer.

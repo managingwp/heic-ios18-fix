@@ -66,6 +66,11 @@ const config = {
             position: 'left',
           },
           {
+            to: '/plugin-download',
+            label: 'Plugin',
+            position: 'right',
+          },
+          {
             href: 'https://github.com/managingwp/heic-ios18-fix',
             label: 'GitHub',
             position: 'right',
