@@ -202,3 +202,82 @@ require_once HFM_PLUGIN_DIR . 'includes/probes/class-heic-fix-monitor-check-prob
 require_once HFM_PLUGIN_DIR . 'includes/probes/class-heic-fix-monitor-imagick-probe.php';
 require_once HFM_PLUGIN_DIR . 'includes/probes/class-heic-fix-monitor-filesystem-probe.php';
 require_once HFM_PLUGIN_DIR . 'includes/probes/class-heic-fix-monitor-probe-engine.php';
+
+$GLOBALS['hfm_test_options'] = array();
+
+if ( ! function_exists( 'get_option' ) ) {
+	/**
+	 * Option getter.
+	 *
+	 * @param string $key     Option key.
+	 * @param mixed  $default Default.
+	 * @return mixed
+	 */
+	function get_option( $key, $default = false ) {
+		return array_key_exists( $key, $GLOBALS['hfm_test_options'] ) ? $GLOBALS['hfm_test_options'][ $key ] : $default;
+	}
+}
+
+if ( ! function_exists( 'update_option' ) ) {
+	/**
+	 * Option updater.
+	 *
+	 * @param string $key   Option key.
+	 * @param mixed  $value Value.
+	 * @param mixed  $autoload Autoload (ignored in tests).
+	 * @return bool
+	 */
+	function update_option( $key, $value, $autoload = null ) {
+		$GLOBALS['hfm_test_options'][ $key ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'add_option' ) ) {
+	/**
+	 * Option adder.
+	 *
+	 * @param string $key      Option key.
+	 * @param mixed  $value    Value.
+	 * @param string $deprecated Deprecated.
+	 * @param mixed  $autoload Autoload.
+	 * @return bool
+	 */
+	function add_option( $key, $value, $deprecated = '', $autoload = 'yes' ) {
+		if ( array_key_exists( $key, $GLOBALS['hfm_test_options'] ) ) {
+			return false;
+		}
+		$GLOBALS['hfm_test_options'][ $key ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_option' ) ) {
+	/**
+	 * Option deleter.
+	 *
+	 * @param string $key Option key.
+	 * @return bool
+	 */
+	function delete_option( $key ) {
+		unset( $GLOBALS['hfm_test_options'][ $key ] );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_parse_args' ) ) {
+	/**
+	 * Parse args.
+	 *
+	 * @param mixed $args     Args.
+	 * @param array $defaults Defaults.
+	 * @return array
+	 */
+	function wp_parse_args( $args, $defaults = array() ) {
+		return array_merge( $defaults, is_array( $args ) ? $args : array() );
+	}
+}
+
+require_once HFM_PLUGIN_DIR . 'includes/class-heic-fix-monitor-normalizer.php';
+require_once HFM_PLUGIN_DIR . 'includes/class-heic-fix-monitor-state-evaluator.php';
+require_once HFM_PLUGIN_DIR . 'includes/class-heic-fix-monitor-state-store.php';

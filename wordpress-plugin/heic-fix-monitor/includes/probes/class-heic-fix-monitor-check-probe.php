@@ -89,6 +89,11 @@ final class Heic_Fix_Monitor_Check_Probe implements Heic_Fix_Monitor_Probe_Inter
 
 			$result = $runner->run( $binary, array( 'check', '-q', '--php', $version ), $timeout );
 
+			if ( function_exists( 'apply_filters' ) ) {
+				$result = apply_filters( 'hfm_command_result', $result, $binary, array( 'check', '-q', '--php', $version ) );
+				$result = is_array( $result ) ? $result : array( 'error' => 'filter_invalid' );
+			}
+
 			if ( ! empty( $result['timed_out'] ) ) {
 				return Heic_Fix_Monitor_Probe_Result::make(
 					'check_command',
