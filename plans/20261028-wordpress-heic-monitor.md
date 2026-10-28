@@ -195,39 +195,51 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 
 #### Tasks
 
-- [ ] Run PHP lint over every plugin PHP file and PHPCS/WPCS when its development tools are available; treat lint and security-standard failures as blocking.
-- [ ] Run fixture tests for every aggregate state, check exit code, parser error, fingerprint transition, reminder window, digest/heartbeat, recovery, command timeout, SSRF rejection, secret redaction, and notification channel.
-- [ ] Activate/deactivate/uninstall in disposable WordPress single-site and multisite containers; verify schedules/options are site-scoped, frontend requests never decode, and `/opt`, `/usr`, PHP ini, and the configured sample remain unchanged.
-- [ ] Exercise `wp heic-monitor check` table/JSON/exit codes and a system-cron-style `--notify` run using fixture filters; do not call a live destination.
-- [ ] Build and inspect the standalone zip, install that zip into a second clean disposable WordPress, and repeat the known-good/affected/recovery smoke sequence.
-- [ ] Run the existing repository static/docs tests and confirm the original HEIC sample checksum; do not run the host-mutating container installer suite unless the user separately requests it in a disposable Docker environment.
+- [x] Run PHP lint over every plugin PHP file and PHPCS/WPCS when its development tools are available; treat lint and security-standard failures as blocking.
+- [x] Run fixture tests for every aggregate state, check exit code, parser error, fingerprint transition, reminder window, digest/heartbeat, recovery, command timeout, SSRF rejection, secret redaction, and notification channel.
+- [x] Activate/deactivate/uninstall in disposable WordPress single-site and multisite containers; verify schedules/options are site-scoped, frontend requests never decode, and `/opt`, `/usr`, PHP ini, and the configured sample remain unchanged.
+- [x] Exercise `wp heic-monitor check` table/JSON/exit codes and a system-cron-style `--notify` run using fixture filters; do not call a live destination.
+- [x] Build and inspect the standalone zip, install that zip into a second clean disposable WordPress, and repeat the known-good/affected/recovery smoke sequence.
+- [x] Run the existing repository static/docs tests and confirm the original HEIC sample checksum; do not run the host-mutating container installer suite unless the user separately requests it in a disposable Docker environment.
 - [ ] **USER-ONLY / PRODUCTION / OUTBOUND — DO NOT EXECUTE AUTOMATICALLY:** After all disposable tests pass, the user may install the zip on a non-client staging site matching PHP 8.5, configure constant-backed secrets/allowlists, run one manual check, and explicitly choose each “Send test” channel. This makes real outbound requests and must remain outstanding until the user reports results.
 - [ ] **Outstanding user gate:** Record staging FPM decode, `check -q` evidence, one simulated regression alert, duplicate suppression, one recovery, and channel delivery. Do not claim production/client-site validation, deployment, or live notification success without user-supplied evidence.
 - [ ] **Validation:** every runnable command below exits 0; fixture assertions match the acceptance criteria; mocked receivers capture no secret in bodies; destructive/system paths are unchanged; any unavailable PHPCS, Docker, multisite, or human staging check is recorded through `pgf test close` as testing debt rather than silently skipped.
 
+
+**Automated verification (2026-10-28):** all 17 `How to Test` commands pass in this
+checkout: PHP lint, fixture JSON, 25 probe assertions, 10 fixture state/transition
+cases plus reminder/corruption/fingerprint checks, static safety scan, disposable
+single-site WordPress (settings, secrets, notifications, admin actions, CLI,
+lifecycle, uninstall), disposable multisite provisioning/isolation/uninstall,
+minimal zip assertion, clean-site zip install, sample checksum, and the Docusaurus
+build. PHPCS/WPCS was not installed locally; the CI job installs it and runs the
+same ruleset. The staging/live-channel gate remains outstanding for the user.
+
 #### How to Test
 
-Prerequisites: Bash 4+, PHP 8.0+, Python 3, Docker with Compose, WP-CLI inside the disposable WordPress service, and optional PHPCS/WPCS development tooling. Commands are read-only outside disposable containers except for writing the local zip under `wordpress-plugin/heic-fix-monitor/artifacts/`. No live webhook URL or production server is used.
+Prerequisites: Bash 4+, PHP 8.0+ with sodium and zip, Python 3, Docker with Compose, and optional PHPCS/WPCS. Commands are read-only outside disposable containers except for writing the local zip under `wordpress-plugin/heic-fix-monitor/artifacts/`. No live webhook URL or production server is used.
 
 ```bash
 find wordpress-plugin/heic-fix-monitor -type f -name '*.php' -print0 | xargs -0 -n1 php -l
-if command -v phpcs >/dev/null 2>&1; then phpcs --standard=wordpress-plugin/heic-fix-monitor/phpcs.xml.dist wordpress-plugin/heic-fix-monitor; fi
+if command -v phpcs >/dev/null 2>&1 && phpcs -i 2>/dev/null | grep -q WordPress; then phpcs --standard=wordpress-plugin/heic-fix-monitor/phpcs.xml.dist wordpress-plugin/heic-fix-monitor; fi
 python3 -c 'import glob,json; [json.load(open(p)) for p in glob.glob("wordpress-plugin/heic-fix-monitor/tests/fixtures/*.json")]'
-bash wordpress-plugin/heic-fix-monitor/tests/run-fixture-tests.sh
-docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml up -d --wait
-docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml exec -T wordpress bash /var/www/html/wp-content/plugins/heic-fix-monitor/tests/run-wp-tests.sh
-docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml exec -T wordpress wp heic-monitor check --format=json | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["state"] in {"ok","degraded","affected","missing","error"}'
-docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml exec -T wordpress-multisite bash /var/www/html/wp-content/plugins/heic-fix-monitor/tests/run-multisite-tests.sh
+php -d memory_limit=512M wordpress-plugin/heic-fix-monitor/tests/run-probe-tests.php
+sh wordpress-plugin/heic-fix-monitor/tests/run-fixture-tests.sh
+bash wordpress-plugin/heic-fix-monitor/bin/static-scan.sh
+docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml up -d --wait db wordpress db-ms wordpress-ms
+docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml run --rm --entrypoint sh cli /var/www/html/wp-content/plugins/heic-fix-monitor/tests/run-wp-tests.sh
+docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml run --rm --entrypoint sh cli-ms /var/www/html/wp-content/plugins/heic-fix-monitor/tests/run-multisite-tests.sh
 bash wordpress-plugin/heic-fix-monitor/bin/build-zip.sh
-unzip -t wordpress-plugin/heic-fix-monitor/artifacts/heic-fix-monitor.zip
-unzip -Z1 wordpress-plugin/heic-fix-monitor/artifacts/heic-fix-monitor.zip | python3 wordpress-plugin/heic-fix-monitor/tests/assert-zip-contents.py
+python3 wordpress-plugin/heic-fix-monitor/tests/assert-zip-contents.py wordpress-plugin/heic-fix-monitor/artifacts/heic-fix-monitor.zip
+docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml up -d --wait db-zip wordpress-zip
+docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml run --rm --entrypoint sh cli-zip /hfm-tests/run-zip-install-tests.sh
 sha256sum -c samples/SHA256SUMS
 git diff --check
 npm run build
 docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml down -v
 ```
 
-Expected: lint/optional PHPCS and all fixture/integration assertions exit 0; single-site and multisite disposable tests prove state isolation and clean lifecycle; mocked email/HTTP deliveries show one regression, no duplicate before the window, and one recovery without secret leakage; WP-CLI emits valid bounded JSON; the zip is valid/minimal and installs in a clean disposable site; the repository sample checksum and Docusaurus build pass; Compose resources are removed. The staging/live-channel gate remains outstanding for the user.
+Expected: lint/optional PHPCS and every fixture, probe, integration and static scan exits 0; single-site and multisite disposable tests prove state isolation and clean lifecycle; mocked email/HTTP deliveries show one regression, no duplicate before the window, one recovery and no secret leakage; WP-CLI emits valid bounded JSON; the zip is valid/minimal, installs in a clean disposable WordPress, and uninstalls cleanly; the repository sample checksum and Docusaurus build pass; Compose resources are removed. The staging/live-channel gate remains outstanding for the user.
 
 #### Manual / UI Checks
 
