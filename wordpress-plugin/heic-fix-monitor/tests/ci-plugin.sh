@@ -33,4 +33,8 @@ compose=(docker compose -f tests/docker-compose.yml)
 bash bin/build-zip.sh
 python3 tests/assert-zip-contents.py artifacts/heic-fix-monitor.zip
 
+"${compose[@]}" up -d --wait db-zip wordpress-zip
+"${compose[@]}" run --rm --entrypoint sh cli-zip /hfm-tests/run-zip-install-tests.sh
+"${compose[@]}" down -v
+
 echo "PASS: plugin CI complete"

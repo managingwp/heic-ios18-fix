@@ -44,7 +44,7 @@ else
 	fail "network activation provisions the main site"
 fi
 
-second_id=$(wp_cli site list --fields=blog_id,slug --format=csv | awk -F, '$2 == "second" { print $1 }')
+second_id=$(wp_cli site list --fields=blog_id,url --format=csv | awk -F, '/\/second\/?$/ { print $1 }')
 if [ -z "$second_id" ]; then
 	second_id=$(wp_cli site create --slug=second --email=second@example.test --porcelain)
 	wp_cli plugin deactivate "$PLUGIN" --network >/dev/null 2>&1 || true
