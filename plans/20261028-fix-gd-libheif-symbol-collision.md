@@ -44,16 +44,26 @@
 
 #### Tasks
 
-- [ ] Refactor `tests/run-container-test.sh` so `assert_decode_with_gd` accepts a sample path, prints the sample/load mode, and requires a JPEG blob larger than 100 bytes.
-- [ ] Add `assert_decode_modes` to run `samples/failure_magick.HEIC` through private ImageMagick CLI, Imagick with `phpX.Y -n`, and `gd.so` loaded before private `imagick.so`. Use the repository sample even when `SAMPLE` names the generated fixture.
-- [ ] Before the collision probe, run `sha256sum -c samples/SHA256SUMS`; fail instead of falling back if the repository sample is missing or altered.
-- [ ] Add `assert_hidden_heif_binding`. Use `readelf -d`, `readelf -Ws`, and a filtered `LD_DEBUG=bindings` GD-first decode to require: no MagickCore shared-libheif dependency, local/hidden embedded `heif_*`, no MagickCore-to-system binding, and GD-to-system binding where GD supports HEIF.
-- [ ] Run the new decode-mode probe against the current code in disposable Ubuntu 22.04/PHP 8.5 and capture the expected red result: CLI and Imagick-only pass, GD-first fails with `Too many auxiliary image references`. Do not weaken the assertion.
-- [ ] Add `{ubuntu: "22.04", php: "8.5"}` to `.github/workflows/ci.yml`; keep the current two jobs, `fail-fast: false`, and the 90-minute timeout.
-- [ ] Update the test header and execution order to state that generated HEIC behavior and the checked-in iOS 18 collision sample are both mandatory.
-- [ ] **Validation:** The disposable 22.04/8.5 run exits non-zero specifically at the GD-first repository-sample assertion after both isolated probes pass.
+- [x] Refactor `tests/run-container-test.sh` so `assert_decode_with_gd` accepts a sample path, prints the sample/load mode, and requires a JPEG blob larger than 100 bytes.
+- [x] Add `assert_decode_modes` to run `samples/failure_magick.HEIC` through private ImageMagick CLI, Imagick with `phpX.Y -n`, and `gd.so` loaded before private `imagick.so`. Use the repository sample even when `SAMPLE` names the generated fixture.
+- [x] Before the collision probe, run `sha256sum -c samples/SHA256SUMS`; fail instead of falling back if the repository sample is missing or altered.
+- [x] Add `assert_hidden_heif_binding`. Use `readelf -d`, `readelf -Ws`, and a filtered `LD_DEBUG=bindings` GD-first decode to require: no MagickCore shared-libheif dependency, local/hidden embedded `heif_*`, no MagickCore-to-system binding, and GD-to-system binding where GD supports HEIF.
+- [x] Run the new decode-mode probe against the current code in disposable Ubuntu 22.04/PHP 8.5 and capture the expected red result: CLI and Imagick-only pass, GD-first fails with `Too many auxiliary image references`. Do not weaken the assertion.
+- [x] Add `{ubuntu: "22.04", php: "8.5"}` to `.github/workflows/ci.yml`; keep the current two jobs, `fail-fast: false`, and the 90-minute timeout.
+- [x] Update the test header and execution order to state that generated HEIC behavior and the checked-in iOS 18 collision sample are both mandatory.
+- [x] **Validation:** The disposable 22.04/8.5 run exits non-zero specifically at the GD-first repository-sample assertion after both isolated probes pass.
 
 **Commit:** `test: reproduce GD libheif symbol capture`
+
+**Red evidence (pre-fix, Ubuntu 22.04 / PHP 8.5, disposable container):**
+
+```text
+gd=no  decode=ok 3024x4032 4289303 bytes
+gd=yes Fatal error: Uncaught ImagickException: Invalid input: Unspecified:
+       Too many auxiliary image references (2.0) ... error/heic.c/IsHEIFSuccess/207
+TEST FAILURE: GD-first decode failed: /repo/samples/failure_magick.HEIC
+       (a system libheif captured ImageMagick's heif_* calls)
+```
 
 ### Phase 2: Statically isolate libheif inside MagickCore
 

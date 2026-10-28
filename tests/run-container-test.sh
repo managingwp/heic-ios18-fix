@@ -5,9 +5,20 @@
 # Usage (inside an ubuntu:22.04 or ubuntu:24.04 container):
 #   PHP_VER=8.3 /repo/tests/run-container-test.sh
 #
-# The script installs ondrej PHP 8.3 (falling back to the distro version if the
-# PPA is unavailable), php-imagick, php-gd, generates a HEIC with the system
+# The script installs ondrej PHP (falling back to the distro version if the PPA
+# is unavailable), php-imagick and php-gd, generates a HEIC with the system
 # heif-enc, then exercises check -> build -> php -> verify -> rollback -> enable.
+#
+# Two samples are mandatory:
+#   - SAMPLE (generated): proves the general HEIC pipeline still works.
+#   - samples/failure_magick.HEIC: the iOS 18 photo whose auxiliary images older
+#     libheif builds reject. A generated HEIC decodes on those builds, so it
+#     cannot prove this bug is fixed.
+#
+# Decode coverage runs three ways against the checked-in sample: the private
+# ImageMagick CLI, Imagick alone, and GD loaded before Imagick. GD-first is the
+# production order and the case where a system libheif can capture ImageMagick's
+# heif_* calls.
 #
 # Copyright (c) 2026 Managing WP
 # SPDX-License-Identifier: MIT
@@ -22,6 +33,7 @@ PHP_VER=${PHP_VER:-8.3}
 JOBS=${JOBS:-$(nproc 2>/dev/null || printf '2')}
 PREFIX=${PREFIX:-/opt/heic-ios18-fix}
 SAMPLE=${SAMPLE:-/tmp/heic-fix-test.heic}
+COLLISION_SAMPLE=${COLLISION_SAMPLE:-$REPO/samples/failure_magick.HEIC}
 
 export NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 DEBIAN_FRONTEND=noninteractive
 
@@ -118,33 +130,177 @@ assert_ldd_isolation() {
     [[ -f $so ]] || fail "missing $so"
     local out
     out=$(ldd "$so")
-    assert_contains "$out" "libheif-heicfix.so.1 => $PREFIX/" "ldd libheif isolation"
-    assert_contains "$out" "libde265-heicfix.so.0 => $PREFIX/" "ldd libde265 isolation"
+    assert_contains "$out" "libMagickCore-7" "ldd MagickCore"
     if [[ $out == *"not found"* ]]; then
         printf '%s\n' "$out" >&2
         fail "imagick.so has unresolved libraries"
     fi
+    if grep -Eq 'libheif[^ ]*\.so' <<<"$out"; then
+        printf '%s\n' "$out" >&2
+        fail "imagick.so still resolves a shared libheif"
+    fi
 }
 
-assert_decode_with_gd() {
-    local gd_so
-    gd_so="$(php"$PHP_VER" -r 'echo ini_get("extension_dir");')/gd.so"
-    if [[ -f $gd_so ]] && ldd "$gd_so" 2>/dev/null | grep -q 'libheif'; then
-        printf 'GD links the system libheif (the SONAME trap is present)\n' >&2
-    else
-        printf 'WARN: GD does not link libheif here; forcing the collision with LD_PRELOAD\n' >&2
-    fi
+php_extension_dir() {
+    php"$PHP_VER" -r 'echo ini_get("extension_dir");'
+}
 
-    HEIC_PROBE_SAMPLE="$SAMPLE" php"$PHP_VER" -r '
-        if (!extension_loaded("gd")) { fwrite(STDERR, "gd not loaded\n"); exit(1); }
+gd_extension_path() {
+    local dir
+    dir=$(php_extension_dir)
+    [[ -f "$dir/gd.so" ]] || return 1
+    printf '%s\n' "$dir/gd.so"
+}
+
+# Decode with an explicit extension load order. "-n" keeps the host ini out of
+# the comparison, so each mode loads exactly the extensions it names.
+run_php_decode() {
+    local sample=$1 mode=$2
+    local imagick_so="$PREFIX/php/$PHP_VER/imagick.so"
+    local gd_so
+    [[ -f $imagick_so ]] || fail "missing $imagick_so"
+    gd_so=$(gd_extension_path) || fail "gd.so not found for PHP $PHP_VER"
+
+    local args=(-n -d display_errors=1)
+    case $mode in
+        imagick-only)
+            args+=(-d "extension=$imagick_so")
+            ;;
+        gd-first)
+            args+=(-d "extension=$gd_so" -d "extension=$imagick_so")
+            ;;
+        *)
+            fail "unknown decode mode: $mode"
+            ;;
+    esac
+
+    HEIC_PROBE_SAMPLE="$sample" php"$PHP_VER" "${args[@]}" -r '
         if (!extension_loaded("imagick")) { fwrite(STDERR, "imagick not loaded\n"); exit(1); }
+        printf("gd=%s ", extension_loaded("gd") ? "yes" : "no");
         $im = new Imagick(getenv("HEIC_PROBE_SAMPLE"));
         $im->setImageFormat("jpeg");
         $blob = $im->getImageBlob();
         if (strlen($blob) < 100) { fwrite(STDERR, "decode produced no data\n"); exit(1); }
-        printf("GD + Imagick decoded %dx%d in one process (%d JPEG bytes)\n",
-            $im->getImageWidth(), $im->getImageHeight(), strlen($blob));
-    ' || fail "GD + Imagick decode failed in one process"
+        printf("decode=ok %dx%d %d bytes\n", $im->getImageWidth(), $im->getImageHeight(), strlen($blob));
+    '
+}
+
+assert_decode_with_gd() {
+    local sample=${1:-$SAMPLE}
+    [[ -f $sample ]] || fail "decode sample missing: $sample"
+    printf 'GD-first decode (%s): %s\n' "$sample" "$(gd_extension_path 2>/dev/null || printf 'gd.so missing')" >&2
+    run_php_decode "$sample" gd-first || fail "GD + Imagick decode failed: $sample"
+}
+
+# The exact production regression: the private CLI, Imagick alone and GD-first
+# must all decode the checked-in iOS 18 sample. GD-first is where a system
+# libheif captures ImageMagick's heif_* calls on affected PHP builds.
+assert_decode_modes() {
+    local sample=$COLLISION_SAMPLE
+    local magick="$PREFIX/imagemagick/bin/magick"
+
+    [[ -f $sample ]] || fail "collision sample missing: $sample"
+    log "Collision sample: $sample"
+    ( cd "$REPO" && sha256sum -c samples/SHA256SUMS ) >/dev/null \
+        || fail "collision sample failed samples/SHA256SUMS"
+
+    [[ -x $magick ]] || fail "private ImageMagick not built at $magick"
+    "$magick" "${sample}[0]" null: || fail "private ImageMagick could not decode $sample"
+
+    run_php_decode "$sample" imagick-only || fail "Imagick-only decode failed: $sample"
+    run_php_decode "$sample" gd-first \
+        || fail "GD-first decode failed: $sample (a system libheif captured ImageMagick's heif_* calls)"
+
+    printf 'All decode modes succeeded for %s\n' "$sample" >&2
+}
+
+magickcore_real_path() {
+    local lib
+    for lib in "$PREFIX"/imagemagick/lib/libMagickCore-7*.so*; do
+        [[ -f $lib && ! -L $lib ]] || continue
+        printf '%s\n' "$lib"
+        return 0
+    done
+    return 1
+}
+
+magickcore_needed() {
+    readelf -d "$1" 2>/dev/null | sed -n 's/.*Shared library: \[\(.*\)\]/\1/p'
+}
+
+magickcore_defines_symbol() {
+    readelf --wide --syms "$1" 2>/dev/null | awk -v s="$2" '
+        $8 == s && $7 != "UND" { found = 1 }
+        END { exit !found }
+    '
+}
+
+magickcore_exported_heif() {
+    readelf --wide --dyn-syms "$1" 2>/dev/null | awk '
+        $4 == "FUNC" && ($5 == "GLOBAL" || $5 == "WEAK") \
+            && $6 == "DEFAULT" && $7 != "UND" && $8 ~ /^heif_/ { print $8 }
+    '
+}
+
+# Proves the private libheif is linked into MagickCore with local binding
+# instead of being a shared dependency the dynamic linker can satisfy from the
+# system copy GD already loaded.
+assert_hidden_heif_binding() {
+    local core mode needed leaked log gd_so sample sym
+    core=$(magickcore_real_path) || fail "libMagickCore-7 not found under $PREFIX/imagemagick/lib"
+    mode=$(awk -F= '$1 == "LIBDE265_MODE" { print $2; exit }' \
+        "$PREFIX/installed-versions.txt" 2>/dev/null || true)
+
+    needed=$(magickcore_needed "$core")
+    printf 'MagickCore: %s\n' "$core" >&2
+    if grep -Eq '^libheif' <<<"$needed"; then
+        fail "libMagickCore still links a shared libheif: $(grep -E '^libheif' <<<"$needed" | paste -sd, -)"
+    fi
+    if [[ $mode != "system" ]] && grep -Eq '^libde265' <<<"$needed"; then
+        fail "libMagickCore still links a shared libde265: $(grep -E '^libde265' <<<"$needed" | paste -sd, -)"
+    fi
+
+    for sym in heif_context_alloc heif_context_read_from_file heif_context_free; do
+        magickcore_defines_symbol "$core" "$sym" \
+            || fail "libMagickCore does not embed $sym; the private decoder is not statically linked"
+    done
+
+    leaked=$(magickcore_exported_heif "$core")
+    [[ -z $leaked ]] \
+        || fail "libMagickCore still exports heif_* symbols: $(paste -sd, - <<<"$leaked")"
+
+    # Runtime proof: with GD loaded first, no MagickCore heif_* call may bind to
+    # a shared libheif, and GD must keep binding to the system copy it ships with.
+    sample=$COLLISION_SAMPLE
+    [[ -f $sample ]] || fail "collision sample missing: $sample"
+    gd_so=$(gd_extension_path) || fail "gd.so not found for PHP $PHP_VER"
+    log=$(mktemp)
+    LD_DEBUG=bindings HEIC_PROBE_SAMPLE="$sample" php"$PHP_VER" -n \
+        -d "extension=$gd_so" -d "extension=$PREFIX/php/$PHP_VER/imagick.so" \
+        -r '
+            try {
+                $im = new Imagick(getenv("HEIC_PROBE_SAMPLE"));
+                $im->setImageFormat("jpeg");
+                $im->getImageBlob();
+            } catch (Throwable $e) {
+                fwrite(STDERR, "probe decode failed: " . $e->getMessage() . "\n");
+            }
+        ' >/dev/null 2>"$log" || true
+
+    leaked=$(grep -E 'binding file .*libMagickCore[^ ]* \[0\] to .*libheif[^ ]* \[0\]' "$log" | head -n 5 || true)
+
+    if ldd "$gd_so" 2>/dev/null | grep -q 'libheif'; then
+        if ! grep -qE 'binding file .*libgd\.so[^ ]* \[0\] to .*libheif[^ ]* \[0\]' "$log"; then
+            rm -f "$log"
+            fail "GD did not bind its own heif_* calls to the system libheif"
+        fi
+    fi
+    rm -f "$log"
+
+    [[ -z $leaked ]] \
+        || fail "libMagickCore heif_* calls bound to a system libheif: $(head -n 1 <<<"$leaked")"
+
+    printf 'Static-hidden libheif: no MagickCore-to-system heif_* binding with GD loaded first\n' >&2
 }
 
 main() {
@@ -175,7 +331,16 @@ main() {
     "$REPO/heic-fix.sh" build -y --jobs "$JOBS" --sample "$SAMPLE"
 
     log "php: build, pre-flight with GD loaded, enable"
-    "$REPO/heic-fix.sh" php --php "$PHP_VER" -y --sample "$SAMPLE"
+    local php_rc=0
+    "$REPO/heic-fix.sh" php --php "$PHP_VER" -y --sample "$SAMPLE" || php_rc=$?
+
+    # The extension exists even when the pre-flight refuses to enable it, so the
+    # collision probe always runs and reports the exact defect before any
+    # enablement failure is reported.
+    log "collision sample: CLI, Imagick-only, GD-first"
+    assert_decode_modes
+    assert_hidden_heif_binding
+    (( php_rc == 0 )) || fail "heic-fix.sh php failed (exit $php_rc)"
 
     log "verify (CLI + FPM, with GD loaded)"
     "$REPO/heic-fix.sh" verify --php "$PHP_VER" --sample "$SAMPLE"
@@ -208,6 +373,8 @@ main() {
     "$REPO/heic-fix.sh" verify --php "$PHP_VER" --sample "$SAMPLE"
     assert_ldd_isolation
     assert_decode_with_gd
+    assert_decode_modes
+    assert_hidden_heif_binding
 
     log "status"
     "$REPO/heic-fix.sh" status --php "$PHP_VER"
