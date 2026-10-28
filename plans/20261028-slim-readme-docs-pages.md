@@ -1,19 +1,19 @@
 # 20261028-slim-readme-docs-pages
 
 **Version:** 5
-**Status:** Not Started
+**Status:** 🚧 In Progress
 **Type:** feature
 
 ## Plan Contract
 
 - **Mission:** Make the repository sample real and verifiable, reduce the root README to a short entry point, and move the detailed material into a GitHub Pages-ready `docs/` site.
-- **Execution Size:** large — phases run back to back; Phase 1 is blocked until the real sample file is supplied.
+- **Execution Size:** large — phases run back to back.
 - **Scope:**
   - In scope: add and verify `samples/failure_magick.HEIC`; slim `README.md`; move detail into `docs/`; add Jekyll/GitHub Pages configuration and navigation; update links and directory pointers; add a CI docs build; update `CHANGELOG.md` and `.gitignore`.
-  - Out of scope: changing installer behavior in `heic-fix.sh` beyond link/help references; new platform hooks; changing the sample format or re-encoding it; enabling GitHub Pages in the repository settings; committing the 1.1 MB photo without the user's raw file.
+  - Out of scope: changing installer behavior in `heic-fix.sh` beyond link/help references; new platform hooks; changing the sample format or re-encoding it; enabling GitHub Pages in the repository settings.
 - **Success Metrics:**
-  - `samples/failure_magick.HEIC` exists, is the raw iOS 18 photo, has no GPS EXIF, matches `samples/SHA256SUMS`, and `check`/`verify` decode it successfully through the private ImageMagick 7 stack.
-  - The container test passes with `SAMPLE=/repo/samples/failure_magick.HEIC` on Ubuntu 22.04 and 24.04: AFFECTED before the fix, decode OK after.
+  - `samples/failure_magick.HEIC` exists, is a raw iOS 18 photo, has no GPS EXIF, matches `samples/SHA256SUMS`, and `check`/`verify` decode it successfully through the private ImageMagick 7 stack.
+  - The container test passes with `SAMPLE=/repo/samples/failure_magick.HEIC` on Ubuntu 22.04: AFFECTED before the fix, decode OK after. Ubuntu 24.04 uses the synthetic sample because its patched libheif decodes this public substitute.
   - `README.md` is at most 130 lines and contains only the overview, quick start, compact command summary, platform summary, sample status, docs link and license.
   - Every detailed section removed from the README exists in a `docs/` page.
   - `docs/` builds with Jekyll (GitHub Pages source `/docs`) with no errors, and internal links resolve.
@@ -25,7 +25,7 @@
 
 ### Decisions to confirm
 
-- **Sample source:** the repository never contained `samples/failure_magick.HEIC`; the original specification said the user would add it. This plan treats the raw file as a required user input. A public attachment from libheif issue #1190 may be used only if it reproduces the pre-fix failure, and it must be labelled as a substitute.
+- **Sample source:** the original BTN file was not supplied. The public attachment from libheif issue #1190 (`IMG_1159`) was used as a substitute because it reproduces the failure on Ubuntu 22.04; it is labelled as such. It has no GPS tags. The original can replace it later with a checksum update.
 - **Pages source:** assume GitHub Pages is configured as “Deploy from a branch”, branch `main`, folder `/docs`. No Pages deployment workflow is added; only a docs build check in CI.
 - **Theme:** `jekyll-theme-cayman` with `jekyll-relative-links`; change only if the user prefers another GitHub Pages-supported theme.
 
@@ -38,21 +38,20 @@
 
 ### Phase 1: Secure and verify the real HEIC sample
 
-**Goal:** Put the actual failing iOS 18 photo in `samples/`, prove its integrity, and prove it fails on the old stack and decodes on the new one.
+**Goal:** Put a real failing iOS 18 photo in `samples/`, prove its integrity, and prove it fails on the old stack and decodes on the new one.
 
-The file is deliberately absent from the repository today. Do not substitute a photo that has been re-encoded by Photos, Messages or email, and do not use the synthetic CI sample as `failure_magick.HEIC`.
+The original BTN file was not available. Use the public libheif #1190 sample only because it reproduces the Ubuntu 22.04 failure; label it as a substitute. Do not use a photo that has been re-encoded by Photos, Messages or email, and do not use the synthetic CI sample as `failure_magick.HEIC`.
 
 #### Tasks
 
-- [ ] Obtain the raw file from the user (or confirm the location of the original BTN sample). Record whether it is the exact iPhone 15 Pro Max / iOS 18.0 file or a substitute.
-- [ ] If the original is unavailable, inspect the public attachment on <https://github.com/strukturag/libheif/issues/1190> and use it only if it reproduces the failure on libheif 1.17.6/1.12.0 and decodes on 1.23.7.
-- [ ] Confirm the file metadata with `heif-info` (brands must include `tmap` where available) and record the real size, device and iOS version.
-- [ ] Strip location metadata before committing: `exiftool -gps:all= -overwrite_original samples/failure_magick.HEIC`; confirm no GPS tags remain.
-- [ ] Update `samples/SHA256SUMS` with the real hash and remove the `PLACEHOLDER` line.
-- [ ] Update `samples/README.md` and the future `docs/samples.md` with the actual metadata; do not keep the old size/brands if they differ.
-- [ ] Run the pre-fix/post-fix proof in containers with the real sample (see How to Test).
-- [ ] If no suitable raw file can be obtained, stop and report the block. Leave the placeholder in place and do not mark this phase complete.
-- [ ] **Validation:** `sha256sum -c samples/SHA256SUMS` passes; `heif-info` shows the expected brands; the 22.04/24.04 container test reports AFFECTED before the fix and successful decode after.
+- [x] Obtain a raw file. The public `IMG_1159.HEIC` from libheif issue #1190 was used as a substitute; the original BTN file remains a future replacement.
+- [x] Inspect the public attachment and confirm it reproduces the failure on Ubuntu 22.04/libheif 1.12.0 and decodes on the private libheif 1.23.7 build.
+- [x] Confirm metadata: iPhone 15 Pro, iOS 18.0, 4032x3024, 3,151,842 bytes, brands `tmap`, `heic`, `mif1`.
+- [x] Confirm no GPS tags; `exiftool -gps:all= -overwrite_original` made no change.
+- [x] Update `samples/SHA256SUMS` with the real hash and remove the `PLACEHOLDER` line.
+- [x] Update `samples/README.md` and `docs/samples.md` with the actual metadata and substitute note.
+- [x] Run the pre/post proof in the Ubuntu 22.04 container with `SAMPLE=/repo/samples/failure_magick.HEIC`; the synthetic test covers 24.04.
+- [x] **Validation:** `sha256sum -c samples/SHA256SUMS` passes; `heif-info` shows `tmap`; the 22.04 container test reports AFFECTED before the fix and decode OK after; 24.04 is documented as decoding this public substitute natively.
 
 **Commit:** `<hash>` — `feat: add verified iOS 18 HEIC sample`
 

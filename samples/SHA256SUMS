@@ -1,10 +1,1 @@
-# SHA256 checksums for samples/.
-#
-# The real iOS 18 sample is not committed yet. Replace the placeholder line
-# with the real checksum after adding and stripping the photo:
-#
-#   exiftool -gps:all= -overwrite_original samples/failure_magick.HEIC
-#   sha256sum samples/failure_magick.HEIC > samples/SHA256SUMS
-#
-# Format: <sha256>  <filename>
-PLACEHOLDER  failure_magick.HEIC
+4b887e6bc345191cbb9836602373b3ec454558ccc62d3518041e085117238fe0  samples/failure_magick.HEIC
