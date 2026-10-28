@@ -1,7 +1,6 @@
 ---
 title: Ubuntu 26.04 and newer
 description: Native iOS 18 HEIC support and the HEVC decoder plugin.
-layout: default
 ---
 
 [← Docs home](../index.md) · [How it works](../how-it-works.md)

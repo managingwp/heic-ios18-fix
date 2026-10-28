@@ -1,7 +1,6 @@
 ---
 title: Commands
 description: All heic-fix.sh commands, options, exit codes and quiet output.
-layout: default
 ---
 
 [← Docs home](index.md) · [Getting started](getting-started.md)

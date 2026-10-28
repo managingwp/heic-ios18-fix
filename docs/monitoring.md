@@ -1,7 +1,6 @@
 ---
 title: Monitoring
 description: Cron, monit and alerting examples for heic-fix.sh check.
-layout: default
 ---
 
 [← Docs home](index.md) · [Commands](commands.md)
@@ -133,4 +132,4 @@ sudo /opt/heic-ios18-fix/heic-fix.sh php --php 8.3
 ```
 
 On Ubuntu 26.04, do not rebuild. Install `libheif-plugin-libde265` instead; see
-[Ubuntu 26.04](platforms/ubuntu-26.04.md).
+[Ubuntu 26.04](platforms/ubuntu-26-04.md).

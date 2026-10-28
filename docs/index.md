@@ -1,7 +1,7 @@
 ---
 title: heic-ios18-fix
 description: Restore iOS 18+ HEIC uploads in PHP Imagick on Debian and Ubuntu.
-layout: default
+slug: /
 ---
 
 # heic-ios18-fix
@@ -40,7 +40,7 @@ libheif **1.18.2** is the first release with the fix, but Ubuntu 22.04 ships
 
 On Ubuntu 26.04 and newer, do not build the prefix. The distribution already
 contains the fix; install `libheif-plugin-libde265` for HEVC decoding. See
-[Ubuntu 26.04](platforms/ubuntu-26.04.md).
+[Ubuntu 26.04](platforms/ubuntu-26-04.md).
 
 ## What the script does
 
@@ -70,7 +70,7 @@ and how to replace it with the original BTN photo.
 | [How it works](how-it-works.md) | Problem, symptoms, prefix layout, SONAME isolation, pre-flight, needrestart, versions |
 | [GridPane](platforms/gridpane.md) | GridPane-specific runbook and update notes |
 | [RunCloud](platforms/runcloud.md) | Supported build, unimplemented PHP wiring |
-| [Ubuntu 26.04](platforms/ubuntu-26.04.md) | Native fix and HEVC plugin requirement |
+| [Ubuntu 26.04](platforms/ubuntu-26-04.md) | Native fix and HEVC plugin requirement |
 | [Troubleshooting](troubleshooting.md) | PCRE2 conflicts, stock imagick after verify |
 | [Samples](samples.md) | Sample rules, checksums, synthetic test file |
 | [Monitoring](monitoring.md) | Cron, monit and alert examples |
@@ -80,9 +80,11 @@ and how to replace it with the original BTN photo.
 
 ## Publishing
 
-This site is built from `/docs` with GitHub Pages. The configuration assumes the
+This site is built with **Docusaurus** and deployed to GitHub Pages by the
+`.github/workflows/deploy-pages.yml` workflow. The configuration assumes the
 project site at `https://managingwp.github.io/heic-ios18-fix/`; change `url` and
-`baseurl` in `_config.yml` if you use a custom domain or rename the repository.
+`baseUrl` in `docusaurus.config.js` if you use a custom domain or rename the
+repository.
 
 ## License
 

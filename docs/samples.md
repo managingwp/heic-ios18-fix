@@ -1,7 +1,6 @@
 ---
 title: Samples
 description: The real iPhone HEIC sample, checksums and synthetic test files.
-layout: default
 ---
 
 [← Docs home](index.md) · [Testing](testing.md)

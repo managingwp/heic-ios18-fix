@@ -1,7 +1,6 @@
 ---
 title: Getting started
 description: Requirements, installation, enabling the extension and rollback.
-layout: default
 ---
 
 [← Docs home](index.md) · [Commands](commands.md) · [How it works](how-it-works.md)
@@ -75,7 +74,7 @@ sudo apt install libheif-plugin-libde265
 sudo systemctl reload php8.5-fpm
 ```
 
-See [Ubuntu 26.04](platforms/ubuntu-26.04.md) for details and verification.
+See [Ubuntu 26.04](platforms/ubuntu-26-04.md) for details and verification.
 
 ## Rollback
 

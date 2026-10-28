@@ -1,7 +1,6 @@
 ---
 title: Troubleshooting
 description: PCRE2 package conflicts and common verification failures.
-layout: default
 ---
 
 [← Docs home](index.md) · [Getting started](getting-started.md) · [Commands](commands.md)

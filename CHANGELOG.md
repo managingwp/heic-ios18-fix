@@ -8,14 +8,17 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-* GitHub Pages documentation site under `docs/` with a landing page,
-  getting-started guide, command reference, platform pages and monitoring.
+* GitHub Pages documentation site with a landing page, getting-started guide,
+  command reference, platform pages and monitoring.
 * Public iPhone 15 Pro / iOS 18.0 HEIC sample (libheif #1190) at
   `samples/failure_magick.HEIC` with a verified SHA256 checksum.
 * Docs build and link check in CI.
 
 ### Changed
 
+* Documentation site migrated from Jekyll/Cayman to **Docusaurus 3.10** with a
+  sidebar and automatic previous/next navigation.
+* GitHub Pages now deploys from the `Deploy docs` GitHub Actions workflow.
 * Root `README.md` reduced to a short entry point; detailed material now lives
   under `docs/`.
 * `monitoring/README.md` and `samples/README.md` are pointers to their docs
@@ -37,7 +40,7 @@ All notable changes to this project are documented here. The format follows
   but HEVC decoding needs `libheif-plugin-libde265`.
 * `check` and `verify` now recognise the missing HEVC plugin on libheif
   ≥ 1.18.2 and print the apt package instead of implying a rebuild is needed.
-* `docs/platforms/ubuntu-26.04.md` and an Ubuntu 26.04 row in the README
+* `docs/platforms/ubuntu-26-04.md` and an Ubuntu 26.04 row in the README
   distro table.
 
 ## [1.0.0] - 2026-10-27

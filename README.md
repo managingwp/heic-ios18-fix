@@ -78,7 +78,7 @@ Full options and exit codes: [Commands](docs/commands.md).
 
 On **Ubuntu 26.04** do not build the prefix: libheif 1.21.2 already contains the
 fix. Install `libheif-plugin-libde265` for HEVC decoding. See
-[docs/platforms/ubuntu-26.04.md](docs/platforms/ubuntu-26.04.md).
+[docs/platforms/ubuntu-26-04.md](docs/platforms/ubuntu-26-04.md).
 
 ## Sample
 
@@ -89,6 +89,8 @@ used by `check` and `verify`. Source, checksum and replacement rules:
 
 ## Documentation
 
+Published site: <https://managingwp.github.io/heic-ios18-fix/>
+
 | Page | Contents |
 | --- | --- |
 | [Getting started](docs/getting-started.md) | Requirements, install, rollback, uninstall |
@@ -96,7 +98,7 @@ used by `check` and `verify`. Source, checksum and replacement rules:
 | [How it works](docs/how-it-works.md) | Problem, symptoms, SONAME isolation, pre-flight, needrestart |
 | [GridPane](docs/platforms/gridpane.md) | GridPane runbook and update notes |
 | [RunCloud](docs/platforms/runcloud.md) | Build support and unimplemented wiring |
-| [Ubuntu 26.04](docs/platforms/ubuntu-26.04.md) | Native fix and HEVC plugin |
+| [Ubuntu 26.04](docs/platforms/ubuntu-26-04.md) | Native fix and HEVC plugin |
 | [Troubleshooting](docs/troubleshooting.md) | PCRE2 conflicts, stock imagick after verify |
 | [Samples](docs/samples.md) | Sample rules and synthetic files |
 | [Monitoring](docs/monitoring.md) | Cron, monit and alerts |

@@ -1,7 +1,6 @@
 ---
 title: GridPane
 description: Runbook for GridPane-managed servers.
-layout: default
 ---
 
 [← Docs home](../index.md) · [Getting started](../getting-started.md) · [Troubleshooting](../troubleshooting.md)

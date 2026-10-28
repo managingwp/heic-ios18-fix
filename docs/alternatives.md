@@ -1,7 +1,6 @@
 ---
 title: Alternatives
 description: Other ways to handle iOS 18 HEIC uploads.
-layout: default
 ---
 
 [← Docs home](index.md)

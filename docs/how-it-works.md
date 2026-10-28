@@ -1,7 +1,6 @@
 ---
 title: How it works
 description: Why older libheif fails, and how the private ImageMagick and SONAME isolation work.
-layout: default
 ---
 
 [← Docs home](index.md) · [Getting started](getting-started.md) · [Commands](commands.md)
@@ -25,7 +24,7 @@ server shares the same system ImageMagick and libheif.
 | Any build with libheif ≥ 1.18.2 | ≥ 1.18.2 | works, with an HEVC decoder available |
 
 Ubuntu 26.04 does not need this build. Install `libheif-plugin-libde265` for
-HEVC decoding; see [Ubuntu 26.04](platforms/ubuntu-26.04.md).
+HEVC decoding; see [Ubuntu 26.04](platforms/ubuntu-26-04.md).
 
 ## Symptoms
 

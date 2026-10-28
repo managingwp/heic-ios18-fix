@@ -19,11 +19,11 @@ node_modules/
 !samples/failure_magick.HEIC
 !samples/SHA256SUMS
 
-# GitHub Pages / Jekyll build output
-docs/_site/
-docs/.jekyll-cache/
-docs/vendor/
-docs/.bundle/
+# Docusaurus / Node build output
+node_modules/
+build/
+.docusaurus/
+.cache-loader/
 
 plans/.pgf.lock
 plans/.pgf.release.lock

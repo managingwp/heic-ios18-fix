@@ -1,7 +1,6 @@
 ---
 title: RunCloud
 description: RunCloud build support and unimplemented PHP wiring.
-layout: default
 ---
 
 [← Docs home](../index.md) · [How it works](../how-it-works.md)

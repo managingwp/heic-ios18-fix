@@ -1,7 +1,6 @@
 ---
 title: Testing
 description: Container tests, CI and the real iOS 18 sample proof.
-layout: default
 ---
 
 [← Docs home](index.md) · [Samples](samples.md)
@@ -87,19 +86,13 @@ The script must stay clean. The build steps are written for `bash`, not `sh`.
 
 ## Docs build
 
-From `docs/`:
+From the repository root:
 
 ```bash
-bundle install
-bundle exec jekyll build
+npm install
+npm run build
+npm run serve
 ```
 
-Or with Docker:
-
-```bash
-docker run --rm -v "$PWD/docs:/srv/jekyll" -w /srv/jekyll \
-    jekyll/jekyll:4.4.1 \
-    bash -c 'bundle install --quiet && bundle exec jekyll build'
-```
-
-The output is `docs/_site/`; `index.html` must exist.
+The development server is at `http://localhost:3000/heic-ios18-fix/`. The
+production output is `build/`; `build/index.html` must exist.
