@@ -41,12 +41,19 @@ final class Heic_Fix_Monitor {
 	 */
 	public function run() {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
+		add_action( 'admin_init', array( $this, 'add_privacy_policy_content' ) );
+		add_action( 'wp_initialize_site', array( 'Heic_Fix_Monitor_Activator', 'provision_new_site' ), 20, 1 );
 
+		Heic_Fix_Monitor_Cron::instance()->init();
 		Heic_Fix_Monitor_Settings::instance()->init();
 		Heic_Fix_Monitor_Notification_Manager::init();
 
 		if ( is_admin() ) {
 			Heic_Fix_Monitor_Admin::instance()->init();
+		}
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			Heic_Fix_Monitor_CLI_Command::register();
 		}
 	}
 

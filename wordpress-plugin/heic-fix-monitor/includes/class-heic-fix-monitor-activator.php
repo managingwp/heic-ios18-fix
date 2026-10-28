@@ -70,6 +70,8 @@ final class Heic_Fix_Monitor_Activator {
 				)
 			);
 		}
+
+		Heic_Fix_Monitor_Cron::schedule_all( $defaults );
 	}
 
 	/**

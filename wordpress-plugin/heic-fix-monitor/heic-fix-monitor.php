@@ -51,6 +51,8 @@ function hfm_load_classes() {
 		'includes/notifications/class-heic-fix-monitor-slack-notifier.php',
 		'includes/notifications/class-heic-fix-monitor-webhook-notifier.php',
 		'includes/notifications/class-heic-fix-monitor-notification-manager.php',
+		'includes/class-heic-fix-monitor-cron.php',
+		'includes/class-heic-fix-monitor-cli-command.php',
 		'includes/class-heic-fix-monitor-activator.php',
 		'includes/class-heic-fix-monitor-deactivator.php',
 		'admin/class-heic-fix-monitor-settings.php',

@@ -41,6 +41,8 @@ fi
 
 wp_cli plugin is-active "$PLUGIN" >/dev/null 2>&1 || wp_cli plugin activate "$PLUGIN"
 
+sample_before=$(sha256sum /var/www/html/wp-content/plugins/$PLUGIN/assets/failure_magick.HEIC | awk '{print $1}')
+
 settings=$(wp_cli option get hfm_settings --format=json)
 assert_eq "$(printf '%s' "$settings" | php -r '$d=json_decode(stream_get_contents(STDIN), true); echo is_array($d) && isset($d["interval"]) && $d["interval"] === "hourly" ? "yes" : "no";')" "yes" "settings option has the typed default shape"
 
@@ -108,9 +110,76 @@ if printf '%s\n' "$admin_output" | grep -Eq '^FAIL:|Parse error'; then
 	fail "admin tests"
 fi
 
+cli_rc=0
+cli_out=$(wp_cli heic-monitor check --format=json --force-decode 2>/dev/null) || cli_rc=$?
+cli_state=$(printf '%s' "$cli_out" | php -r '$d=json_decode(stream_get_contents(STDIN), true); echo is_array($d) && isset($d["state"], $d["signals"]) ? $d["state"] : "invalid";')
+if printf '%s' "$cli_out" | php -r '$d=json_decode(stream_get_contents(STDIN), true); exit(is_array($d) && isset($d["state"], $d["signals"], $d["event"]) ? 0 : 1);'; then
+	pass "wp heic-monitor check emits bounded JSON"
+else
+	fail "wp heic-monitor check emits bounded JSON"
+fi
+case "$cli_state" in
+	ok|degraded|affected|missing|error) pass "CLI reports a valid state ($cli_state)" ;;
+	*) fail "CLI reports a valid state ($cli_state)" ;;
+esac
+case "$cli_rc" in
+	0|1|2|3) pass "CLI exit code is in the documented set ($cli_rc)" ;;
+	*) fail "CLI exit code is in the documented set ($cli_rc)" ;;
+esac
+
+if wp_cli heic-monitor check --format=xml >/dev/null 2>&1; then
+	fail "CLI rejects an unknown format"
+else
+	pass "CLI rejects an unknown format"
+fi
+if wp_cli heic-monitor check --unknown-option >/dev/null 2>&1; then
+	fail "CLI rejects unknown options"
+else
+	pass "CLI rejects unknown options"
+fi
+if wp_cli heic-monitor check extra-arg >/dev/null 2>&1; then
+	fail "CLI rejects positional arguments"
+else
+	pass "CLI rejects positional arguments"
+fi
+
 wp_cli plugin deactivate "$PLUGIN"
+cron_after=$(wp_cli cron event list --fields=hook --format=csv || true)
+if printf '%s' "$cron_after" | grep -q 'hfm_run_check'; then
+	fail "deactivation unschedules the check event"
+else
+	pass "deactivation unschedules the check event"
+fi
+
 wp_cli plugin activate "$PLUGIN"
-assert_eq "$(wp_cli plugin is-active "$PLUGIN" && echo active)" "active" "deactivation and reactivation leave the plugin active"
+assert_eq "$(wp_cli plugin is-active "$PLUGIN" && echo active)" "active" "reactivation leaves the plugin active"
+cron_reactivated=$(wp_cli cron event list --fields=hook --format=csv || true)
+if printf '%s' "$cron_reactivated" | grep -q 'hfm_run_check'; then
+	pass "reactivation reschedules the check event"
+else
+	fail "reactivation reschedules the check event"
+fi
+
+wp_cli plugin deactivate "$PLUGIN"
+wp_cli plugin uninstall "$PLUGIN" --skip-delete
+if wp_cli option get hfm_settings >/dev/null 2>&1; then
+	fail "uninstall removes plugin options"
+else
+	pass "uninstall removes plugin options"
+fi
+cron_uninstalled=$(wp_cli cron event list --fields=hook --format=csv || true)
+if printf '%s' "$cron_uninstalled" | grep -q 'hfm_'; then
+	fail "uninstall removes plugin scheduled events"
+else
+	pass "uninstall removes plugin scheduled events"
+fi
+
+sample_after=$(sha256sum /var/www/html/wp-content/plugins/$PLUGIN/assets/failure_magick.HEIC | awk '{print $1}')
+if [ "$sample_before" = "$sample_after" ]; then
+	pass "probes and lifecycle leave the bundled sample unchanged"
+else
+	fail "probes and lifecycle leave the bundled sample unchanged"
+fi
 
 if [ "$FAILURES" -gt 0 ]; then
 	printf '\n%d failure(s)\n' "$FAILURES" >&2
