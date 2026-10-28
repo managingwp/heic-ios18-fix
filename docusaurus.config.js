@@ -49,6 +49,20 @@ const config = {
     ],
   ],
 
+  themes: [
+    [
+      '@easyops-cn/docusaurus-search-local',
+      ({
+        hashed: true,
+        indexBlog: false,
+        language: ['en'],
+        // Must mirror docs.routeBasePath above; the plugin default 'docs'
+        // would index URLs that 404 on this project site.
+        docsRouteBasePath: '/',
+      }),
+    ],
+  ],
+
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
