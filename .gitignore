@@ -18,3 +18,5 @@ node_modules/
 # Keep the real sample and its checksums in the repository.
 !samples/failure_magick.HEIC
 !samples/SHA256SUMS
+plans/.pgf.lock
+plans/.pgf.release.lock
