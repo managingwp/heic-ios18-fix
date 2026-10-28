@@ -78,6 +78,12 @@ and how to replace it with the original BTN photo.
 | [Alternatives](alternatives.md) | Convert at upload, browser WASM, OS upgrade |
 | [References](references.md) | Upstream issues and discussions |
 
+## Publishing
+
+This site is built from `/docs` with GitHub Pages. The configuration assumes the
+project site at `https://managingwp.github.io/heic-ios18-fix/`; change `url` and
+`baseurl` in `_config.yml` if you use a custom domain or rename the repository.
+
 ## License
 
 MIT © Managing WP. See [LICENSE](https://github.com/managingwp/heic-ios18-fix/blob/main/LICENSE).

@@ -1,7 +1,7 @@
 # 20261028-slim-readme-docs-pages
 
 **Version:** 5
-**Status:** 🚧 In Progress
+**Status:** ✅ Implemented (2026-10-28)
 **Type:** feature
 
 ## Plan Contract
@@ -32,7 +32,7 @@
 ## Skills Used
 
 - **Creation:** `plan-generation-skill` (PGF format, phase order, validation and final testing contract).
-- **Implementation:** none yet.
+- **Implementation:** `plan-generation-skill` (PGF execution, phase tracking and close-out).
 
 ## Phases
 
@@ -53,7 +53,7 @@ The original BTN file was not available. Use the public libheif #1190 sample onl
 - [x] Run the pre/post proof in the Ubuntu 22.04 container with `SAMPLE=/repo/samples/failure_magick.HEIC`; the synthetic test covers 24.04.
 - [x] **Validation:** `sha256sum -c samples/SHA256SUMS` passes; `heif-info` shows `tmap`; the 22.04 container test reports AFFECTED before the fix and decode OK after; 24.04 is documented as decoding this public substitute natively.
 
-**Commit:** `<hash>` — `feat: add verified iOS 18 HEIC sample`
+**Commit:** `7d8bba7` — `feat: add verified iOS 18 HEIC sample`
 
 ### Phase 2: Inventory content and define the docs information architecture
 
@@ -61,9 +61,9 @@ The original BTN file was not available. Use the public libheif #1190 sample onl
 
 #### Tasks
 
-- [ ] Inventory the current sections in `README.md`, `samples/README.md`, `monitoring/README.md`, `docs/platforms/*.md` and `docs/troubleshooting.md`.
-- [ ] Define the README outline: title, one-paragraph problem/solution, quick start, compact commands table, supported platforms, sample status, documentation links, license.
-- [ ] Define the docs page list:
+- [x] Inventory the current sections in `README.md`, `samples/README.md`, `monitoring/README.md`, `docs/platforms/*.md` and `docs/troubleshooting.md`.
+- [x] Define the README outline: title, one-paragraph problem/solution, quick start, compact commands table, supported platforms, sample status, documentation links, license.
+- [x] Define the docs page list:
   - `docs/index.md` — landing and navigation
   - `docs/getting-started.md` — requirements, install, build, `php`, `verify`, rollback
   - `docs/commands.md` — all commands, options and exit codes
@@ -74,10 +74,10 @@ The original BTN file was not available. Use the public libheif #1190 sample onl
   - `docs/alternatives.md` — upload conversion, browser WASM, iOS auto-conversion
   - `docs/references.md` — issue/discussion links
   - existing `docs/platforms/gridpane.md`, `docs/platforms/runcloud.md`, `docs/platforms/ubuntu-26.04.md`, `docs/troubleshooting.md`
-- [ ] Record a section-to-page mapping table in the plan or a temporary `docs/_migration.md` (remove before close-out).
-- [ ] **Validation:** every current README section has a named destination; no page is planned twice.
+- [x] Record a section-to-page mapping table in the plan or a temporary `docs/_migration.md` (remove before close-out).
+- [x] **Validation:** every current README section has a named destination; no page is planned twice.
 
-**Commit:** `<hash>` — `docs: define documentation information architecture`
+**Commit:** `ef8e85f` — `docs: publish detailed content as a GitHub Pages site`
 
 ### Phase 3: Slim the README
 
@@ -85,15 +85,15 @@ The original BTN file was not available. Use the public libheif #1190 sample onl
 
 #### Tasks
 
-- [ ] Rewrite `README.md` to the approved outline; keep it at or below 130 lines.
-- [ ] Keep the quick-start commands (check, build, php, verify, rollback) and a compact 8-row command summary.
-- [ ] Keep a short supported-platform summary and a one-line Ubuntu 26.04 node with a docs link.
-- [ ] Add a “Samples” status block: whether `samples/failure_magick.HEIC` is present, and a link to `docs/samples.md`.
-- [ ] Add a “Documentation” section linking to `docs/index.md` and, once Pages is enabled, the Pages URL.
-- [ ] Remove symptoms, distro table, detailed options, how-it-works, needrestart, monitoring, alternatives and references from the README; they move in Phase 4.
-- [ ] **Validation:** `wc -l README.md` is ≤130; all README links resolve; no detailed section is duplicated in both README and docs.
+- [x] Rewrite `README.md` to the approved outline; keep it at or below 130 lines.
+- [x] Keep the quick-start commands (check, build, php, verify, rollback) and a compact 8-row command summary.
+- [x] Keep a short supported-platform summary and a one-line Ubuntu 26.04 node with a docs link.
+- [x] Add a “Samples” status block: whether `samples/failure_magick.HEIC` is present, and a link to `docs/samples.md`.
+- [x] Add a “Documentation” section linking to `docs/index.md` and, once Pages is enabled, the Pages URL.
+- [x] Remove symptoms, distro table, detailed options, how-it-works, needrestart, monitoring, alternatives and references from the README; they move in Phase 4.
+- [x] **Validation:** `wc -l README.md` is ≤130; all README links resolve; no detailed section is duplicated in both README and docs.
 
-**Commit:** `<hash>` — `docs: slim README to a docs entry point`
+**Commit:** `4ecfd83` — `docs: slim README to a docs entry point`
 
 ### Phase 4: Build the GitHub Pages docs site and move the detail
 
@@ -101,19 +101,19 @@ The original BTN file was not available. Use the public libheif #1190 sample onl
 
 #### Tasks
 
-- [ ] Add `docs/_config.yml` with title, description, `theme: jekyll-theme-cayman`, `markdown: kramdown`, and the `jekyll-relative-links` plugin with `relative_links.enabled: true`.
-- [ ] Write `docs/index.md` with front matter, a short landing page, and links to every docs page.
-- [ ] Create `docs/getting-started.md`, `docs/commands.md`, `docs/how-it-works.md`, `docs/samples.md`, `docs/monitoring.md`, `docs/testing.md`, `docs/alternatives.md`, `docs/references.md` with front matter and a “Docs home” link.
-- [ ] Move the relevant content from the current README into those pages without losing the exact error strings, command options and exit codes.
-- [ ] Move `monitoring/README.md` content to `docs/monitoring.md`; leave `monitoring/README.md` as a short pointer.
-- [ ] Move `samples/README.md` content to `docs/samples.md`; leave `samples/README.md` as a short pointer, keeping `samples/SHA256SUMS` and the sample in place.
-- [ ] Update `docs/platforms/gridpane.md`, `docs/platforms/runcloud.md`, `docs/platforms/ubuntu-26.04.md` and `docs/troubleshooting.md` to link to the new pages instead of the old README anchors.
-- [ ] Add a small `docs/_includes/nav.html` and include it after the front matter on each page, or provide an equivalent consistent nav in `docs/index.md`.
-- [ ] Add `docs/_site/` and `docs/.jekyll-cache/` to `.gitignore`.
-- [ ] Add `CHANGELOG.md` entries for the docs site, slim README and sample work.
-- [ ] **Validation:** every page has front matter and a nav/home link; no old README anchor links remain; content from the old README exists in docs; `docs/` has no duplicate page titles.
+- [x] Add `docs/_config.yml` with title, description, `theme: jekyll-theme-cayman`, `markdown: kramdown`, and the `jekyll-relative-links` plugin with `relative_links.enabled: true`.
+- [x] Write `docs/index.md` with front matter, a short landing page, and links to every docs page.
+- [x] Create `docs/getting-started.md`, `docs/commands.md`, `docs/how-it-works.md`, `docs/samples.md`, `docs/monitoring.md`, `docs/testing.md`, `docs/alternatives.md`, `docs/references.md` with front matter and a “Docs home” link.
+- [x] Move the relevant content from the current README into those pages without losing the exact error strings, command options and exit codes.
+- [x] Move `monitoring/README.md` content to `docs/monitoring.md`; leave `monitoring/README.md` as a short pointer.
+- [x] Move `samples/README.md` content to `docs/samples.md`; leave `samples/README.md` as a short pointer, keeping `samples/SHA256SUMS` and the sample in place.
+- [x] Update `docs/platforms/gridpane.md`, `docs/platforms/runcloud.md`, `docs/platforms/ubuntu-26.04.md` and `docs/troubleshooting.md` to link to the new pages instead of the old README anchors.
+- [x] Add a small `docs/_includes/nav.html` and include it after the front matter on each page, or provide an equivalent consistent nav in `docs/index.md`.
+- [x] Add `docs/_site/` and `docs/.jekyll-cache/` to `.gitignore`.
+- [x] Add `CHANGELOG.md` entries for the docs site, slim README and sample work.
+- [x] **Validation:** every page has front matter and a nav/home link; no old README anchor links remain; content from the old README exists in docs; `docs/` has no duplicate page titles.
 
-**Commit:** `<hash>` — `docs: publish detailed content as a GitHub Pages site`
+**Commit:** `ef8e85f` — `docs: publish detailed content as a GitHub Pages site`
 
 ### Phase 5: Add docs build and link validation
 
@@ -121,13 +121,13 @@ The original BTN file was not available. Use the public libheif #1190 sample onl
 
 #### Tasks
 
-- [ ] Add a `docs-build` job to `.github/workflows/ci.yml` that builds `docs/` with the GitHub Pages Jekyll action. If `actions/jekyll-build-pages@v1` cannot use the `docs` subdirectory, use the official `jekyll/jekyll` container instead.
-- [ ] Add a local docs build command to `docs/README.md` or the docs index.
-- [ ] Add a link audit. Prefer a small script or a `lychee` offline check, limited to `docs/` and README-relative links; add it to CI only if it is reliable and fast.
-- [ ] Confirm the GitHub Pages source assumption in the docs: branch `main`, folder `/docs`; no deploy workflow is added.
-- [ ] **Validation:** the docs job builds successfully on CI; a local build produces `docs/_site/index.html`; the link audit reports no broken internal links.
+- [x] Add a `docs-build` job to `.github/workflows/ci.yml` that builds `docs/` with the GitHub Pages Jekyll action. If `actions/jekyll-build-pages@v1` cannot use the `docs` subdirectory, use the official `jekyll/jekyll` container instead.
+- [x] Add a local docs build command to `docs/README.md` or the docs index.
+- [x] Add a link audit. Prefer a small script or a `lychee` offline check, limited to `docs/` and README-relative links; add it to CI only if it is reliable and fast.
+- [x] Confirm the GitHub Pages source assumption in the docs: branch `main`, folder `/docs`; no deploy workflow is added.
+- [x] **Validation:** the docs job builds successfully on CI; a local build produces `docs/_site/index.html`; the link audit reports no broken internal links.
 
-**Commit:** `<hash>` — `ci: build and link-check the docs site`
+**Commit:** `5c6557a` — `ci: build and link-check the docs site`
 
 ### Phase 6: Testing & Verification
 
@@ -135,17 +135,17 @@ The original BTN file was not available. Use the public libheif #1190 sample onl
 
 #### Tasks
 
-- [ ] Run shellcheck.
-- [ ] Build the docs site locally and confirm the landing page and each page render.
-- [ ] Audit internal links from README and docs.
-- [ ] Verify the sample hash, metadata and decode results.
-- [ ] Run the container test with the real sample on Ubuntu 22.04 and 24.04.
-- [ ] Confirm the README line budget and that no detailed section is duplicated.
-- [ ] **Validation:** every command in `How to Test` produces the expected output and CI is green.
+- [x] Run shellcheck.
+- [x] Build the docs site locally and confirm the landing page and each page render.
+- [x] Audit internal links from README and docs.
+- [x] Verify the sample hash, metadata and decode results.
+- [x] Run the container test with the real sample on Ubuntu 22.04; use the synthetic test on 24.04 because the patched libheif decodes this substitute.
+- [x] Confirm the README line budget and that no detailed section is duplicated.
+- [x] **Validation:** every command in `How to Test` produces the expected output and CI is green.
 
 #### How to Test
 
-Prerequisites: Docker, `heif-info`, `sha256sum`, `exiftool` (for the sample preparation), and the raw `samples/failure_magick.HEIC` file. If the sample is not present, Phase 1 is blocked and only the docs checks are runnable.
+Prerequisites: Docker, `heif-info`, `sha256sum`, `exiftool` (for the sample preparation), and the raw `samples/failure_magick.HEIC` file. The sample is present; the 24.04 real-sample assertion is replaced by the synthetic test because Ubuntu 24.04's patched libheif decodes this public substitute.
 
 ```bash
 # 1. Sample integrity and metadata
@@ -158,33 +158,34 @@ git diff --check
 
 # 3. Build the docs site locally
 docker run --rm -v "$PWD/docs:/srv/jekyll" -w /srv/jekyll \
-    jekyll/jekyll:latest jekyll build
+    jekyll/jekyll:4.4.1 \
+    bash -c 'bundle install --quiet && bundle exec jekyll build'
 test -f docs/_site/index.html
 
 # 4. Link audit (offline, local files)
-docker run --rm -v "$PWD:/input" lycheeverse/lychee \
+docker run --rm -v "$PWD:/input" lycheeverse/lychee:latest \
     --offline --no-progress /input/README.md /input/docs
 
 # 5. Shellcheck
 shellcheck -x heic-fix.sh tests/*.sh
 
-# 6. End-to-end with the real iOS 18 sample (both distros)
-docker run --rm -v "$PWD:/repo:ro" \
-    -e PHP_VER=8.3 -e SAMPLE=/repo/samples/failure_magick.HEIC \
-    ubuntu:24.04 bash /repo/tests/run-container-test.sh
-
+# 6. End-to-end with the real iOS 18 sample on 22.04
 docker run --rm -v "$PWD:/repo:ro" \
     -e PHP_VER=8.3 -e SAMPLE=/repo/samples/failure_magick.HEIC \
     ubuntu:22.04 bash /repo/tests/run-container-test.sh
+
+# 7. Synthetic test on 24.04 (its patched libheif decodes this public substitute)
+docker run --rm -v "$PWD:/repo:ro" -e PHP_VER=8.3 \
+    ubuntu:24.04 bash /repo/tests/run-container-test.sh
 ```
 
 Expected:
 
-- `sha256sum -c` reports `failure_magick.HEIC: OK`; `heif-info` shows `heic`/`tmap` metadata.
+- `sha256sum -c` reports `samples/failure_magick.HEIC: OK`; `heif-info` shows `heic`/`tmap` metadata.
 - README is ≤130 lines; `git diff --check` is silent.
 - Jekyll exits 0 and `docs/_site/index.html` exists.
 - Lychee reports no broken local links.
 - Shellcheck exits 0.
-- Each container test prints `All container tests passed`, with `check` AFFECTED before the fix and `decode=ok` after enabling.
+- Both container tests print `All container tests passed`; the 22.04 real-sample run is AFFECTED before the fix and `decode=ok` after enabling.
 
-**Commit:** `<hash>` — `test: verify docs site and real iOS 18 sample`
+**Commit:** `close-out commit` — `test: verify docs site and real iOS 18 sample`
