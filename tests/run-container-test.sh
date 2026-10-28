@@ -129,7 +129,7 @@ assert_ldd_isolation() {
     local so="$PREFIX/php/$PHP_VER/imagick.so"
     [[ -f $so ]] || fail "missing $so"
     local out
-    out=$(ldd "$so")
+    out=$(env -u LD_PRELOAD ldd "$so")
     assert_contains "$out" "libMagickCore-7" "ldd MagickCore"
     if [[ $out == *"not found"* ]]; then
         printf '%s\n' "$out" >&2
@@ -289,7 +289,7 @@ assert_hidden_heif_binding() {
 
     leaked=$(grep -E 'binding file .*libMagickCore[^ ]* \[0\] to .*libheif[^ ]* \[0\]' "$log" | head -n 5 || true)
 
-    if ldd "$gd_so" 2>/dev/null | grep -q 'libheif'; then
+    if env -u LD_PRELOAD ldd "$gd_so" 2>/dev/null | grep -q 'libheif'; then
         if ! grep -qE 'binding file .*libgd\.so[^ ]* \[0\] to .*libheif[^ ]* \[0\]' "$log"; then
             rm -f "$log"
             fail "GD did not bind its own heif_* calls to the system libheif"
@@ -348,7 +348,7 @@ main() {
     assert_decode_with_gd
 
     local system_libheif
-    system_libheif=$(ldconfig -p | awk '/libheif\.so\.1 /{print $NF; exit}')
+    system_libheif=$(ldconfig -p | awk '/libheif\.so\.1 /{print $NF; exit}' || true)
     if [[ -n $system_libheif ]]; then
         log "verify with the system libheif preloaded (stronger GD collision test)"
         LD_PRELOAD="$system_libheif" "$REPO/heic-fix.sh" verify --php "$PHP_VER" --sample "$SAMPLE"
@@ -357,7 +357,7 @@ main() {
     local cli_im fpm_im
     cli_im=$(php"$PHP_VER" -r 'echo Imagick::getVersion()["versionString"];')
     assert_contains "$cli_im" "ImageMagick 7" "CLI ImageMagick version"
-    fpm_im=$(php-fpm"$PHP_VER" -i 2>&1 | sed -n 's/^Imagick using ImageMagick library version => //p' | head -n 1)
+    fpm_im=$(php-fpm"$PHP_VER" -i 2>&1 | sed -n 's/^Imagick using ImageMagick library version => //p' | head -n 1 || true)
     assert_contains "$fpm_im" "ImageMagick 7" "FPM ImageMagick version"
 
     log "check after the fix (expect OK)"

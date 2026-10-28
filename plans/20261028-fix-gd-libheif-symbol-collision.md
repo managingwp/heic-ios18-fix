@@ -71,20 +71,44 @@ TEST FAILURE: GD-first decode failed: /repo/samples/failure_magick.HEIC
 
 #### Tasks
 
-- [ ] In `heic-fix.sh`, add one static install root beneath `$PREFIX` (for example `$PREFIX/heif-static`) and build-revision constants for static libde265, static libheif, and ImageMagick linkage. Keep `$HEIF` shared artifacts for tools and diagnostics.
-- [ ] Preserve `build_libde265`'s shared build, then add a default-mode static build from the same source with `BUILD_SHARED_LIBS=OFF`, `CMAKE_POSITION_INDEPENDENT_CODE=ON`, `ENABLE_SDL=OFF`, and `ENABLE_ENCODER=OFF`, installed only under the static root.
-- [ ] When `--system-libde265` is selected, do not create a private libde265 archive; record that static libheif uses the supported system decoder dependency and validate that path separately.
-- [ ] Add a static libheif build from the resolved source/version with `BUILD_SHARED_LIBS=OFF`, `CMAKE_POSITION_INDEPENDENT_CODE=ON`, the existing codec choices, and `ENABLE_PLUGIN_LOADING=OFF`. Put static libde265's pkg-config directory first.
-- [ ] Make static-build skip logic require matching build revisions, resolved versions, libde265 mode, and expected `.a` files. On mismatch remove only the corresponding static build/install subtree and rebuild it.
-- [ ] Change `build_imagemagick` to consume static libheif via static pkg-config metadata and add `-Wl,-Bsymbolic-functions -Wl,--exclude-libs,ALL` to MagickCore linking while retaining ImageMagick's own prefix rpath.
-- [ ] Add an ImageMagick linkage revision to `build_imagemagick` skip/record logic. Existing hosts with the same ImageMagick version but no matching revision must rebuild once rather than print “already built; skipping.”
-- [ ] Rewrite `verify_imagemagick_linkage` for the new contract: reject MagickCore `DT_NEEDED` entries for shared libheif/libde265 in default mode; reject exported dynamic `heif_*`; require local `heif_context_alloc`, `heif_context_read_from_file`, and `heif_context_free`; retain unresolved-dependency, ImageMagick 7, and HEIC-format checks.
-- [ ] Update `verify_imagick_linkage`: require private MagickCore/MagickWand paths, stop requiring private libheif/libde265 in transitive `ldd`, and fail if default-mode `imagick.so` reaches either shared libheif through MagickCore.
-- [ ] Make `cmd_build` invoke static builds before ImageMagick, print the mode, and record enough revision/linkage metadata in `installed-versions.txt` to identify old versus static-hidden installs.
-- [ ] Keep `preflight_imagick`'s GD-loaded sample decode and refusal behavior unchanged; any failed real-sample decode must still prevent enablement.
-- [ ] **Validation:** MagickCore has no shared libheif/libde265 `NEEDED` entry in default mode, required `heif_*` definitions are local/hidden, and CLI, Imagick-only, and GD-first all decode the repository sample.
+- [x] In `heic-fix.sh`, add one static install root beneath `$PREFIX` (for example `$PREFIX/heif-static`) and build-revision constants for static libde265, static libheif, and ImageMagick linkage. Keep `$HEIF` shared artifacts for tools and diagnostics.
+- [x] Preserve `build_libde265`'s shared build, then add a default-mode static build from the same source with `BUILD_SHARED_LIBS=OFF`, `CMAKE_POSITION_INDEPENDENT_CODE=ON`, `ENABLE_SDL=OFF`, and `ENABLE_ENCODER=OFF`, installed only under the static root.
+- [x] When `--system-libde265` is selected, do not create a private libde265 archive; record that static libheif uses the supported system decoder dependency and validate that path separately.
+- [x] Add a static libheif build from the resolved source/version with `BUILD_SHARED_LIBS=OFF`, `CMAKE_POSITION_INDEPENDENT_CODE=ON`, the existing codec choices, and `ENABLE_PLUGIN_LOADING=OFF`. Put static libde265's pkg-config directory first.
+- [x] Make static-build skip logic require matching build revisions, resolved versions, libde265 mode, and expected `.a` files. On mismatch remove only the corresponding static build/install subtree and rebuild it.
+- [x] Change `build_imagemagick` to consume static libheif via static pkg-config metadata and add `-Wl,-Bsymbolic-functions -Wl,--exclude-libs,ALL` to MagickCore linking while retaining ImageMagick's own prefix rpath.
+- [x] Add an ImageMagick linkage revision to `build_imagemagick` skip/record logic. Existing hosts with the same ImageMagick version but no matching revision must rebuild once rather than print “already built; skipping.”
+- [x] Rewrite `verify_imagemagick_linkage` for the new contract: reject MagickCore `DT_NEEDED` entries for shared libheif/libde265 in default mode; reject exported dynamic `heif_*`; require local `heif_context_alloc`, `heif_context_read_from_file`, and `heif_context_free`; retain unresolved-dependency, ImageMagick 7, and HEIC-format checks.
+- [x] Update `verify_imagick_linkage`: require private MagickCore/MagickWand paths, stop requiring private libheif/libde265 in transitive `ldd`, and fail if default-mode `imagick.so` reaches either shared libheif through MagickCore.
+- [x] Make `cmd_build` invoke static builds before ImageMagick, print the mode, and record enough revision/linkage metadata in `installed-versions.txt` to identify old versus static-hidden installs.
+- [x] Keep `preflight_imagick`'s GD-loaded sample decode and refusal behavior unchanged; any failed real-sample decode must still prevent enablement.
+- [x] **Validation:** MagickCore has no shared libheif/libde265 `NEEDED` entry in default mode, required `heif_*` definitions are local/hidden, and CLI, Imagick-only, and GD-first all decode the repository sample.
 
 **Commit:** `fix: isolate libheif symbols inside MagickCore`
+
+**Green evidence (Ubuntu 22.04 / PHP 8.5, disposable container):**
+
+```text
+Pre-flight for PHP 8.5
+  GD loaded    : yes
+  ImageMagick  : ImageMagick 7.1.2-34 Q16-HDRI
+  HEIC formats : HEIC,HEIF
+  libheif link : static-hidden
+  sample       : decode=ok
+
+gd=no  decode=ok 3024x4032 4289303 bytes
+gd=yes decode=ok 3024x4032 4289303 bytes
+All decode modes succeeded for /repo/samples/failure_magick.HEIC
+Static-hidden libheif: no MagickCore-to-system heif_* binding with GD loaded first
+
+  Library isolation
+    libheif                  PASS (linked into MagickCore)
+    libde265                 PASS (linked into MagickCore)
+    imagick.so               PASS no shared libheif
+```
+
+`check -q` reports `status=ok ... libheif=1.23.7 linkage=static-hidden`.
+`verify` also passes with the system `libheif.so.1` in `LD_PRELOAD`.
 
 ### Phase 3: Harden diagnostics and documentation
 
@@ -92,17 +116,22 @@ TEST FAILURE: GD-first decode failed: /repo/samples/failure_magick.HEIC
 
 #### Tasks
 
-- [ ] Add concise linkage output to `status` or `verify`: report `libheif linkage=static-hidden` only after ELF checks pass; report an actionable non-zero result for shared or mixed binding. Do not emit full `LD_DEBUG` output normally.
-- [ ] Distinguish missing HEIC support, legacy shared-private linkage, and confirmed GD/system symbol capture in errors; preserve “not enabling” semantics.
-- [ ] Update `docs/how-it-works.md` to explain that SONAMEs isolate objects but not globally visible `heif_*` lookup, include the confirmed mixed 1.12.0/1.23.7 example, and describe PIC static linkage plus hidden/local symbols.
-- [ ] Update `docs/troubleshooting.md` with exact CLI, Imagick-only, GD-first, and filtered binding probes. Explicitly reject disabling GD, global extension reordering, production `LD_PRELOAD`, and bypassing pre-flight.
-- [ ] Update `docs/testing.md` for the repository collision sample, PHP 8.5 CI job, and ELF/runtime assertions; state why a generated HEIC alone cannot prove the iOS 18 auxiliary-image fix.
-- [ ] Update `README.md` only if its concise safety/architecture text still says SONAME isolation alone is sufficient.
-- [ ] Add an unreleased `CHANGELOG.md` entry for the confirmed interposition defect, static-hidden repair, cache invalidation, PHP 8.5 coverage, and preserved safety gate.
-- [ ] Search `README.md` and `docs/` for `DEEPBIND`, `SONAME`, `libheif-heicfix`, and old `ldd` expectations; qualify or remove every stale unconditional claim.
-- [ ] **Validation:** Docs match the new ELF layout; no page expects shared private libheif in `imagick.so`'s `ldd`; Docusaurus and offline links pass.
+- [x] Add concise linkage output to `status` or `verify`: report `libheif linkage=static-hidden` only after ELF checks pass; report an actionable non-zero result for shared or mixed binding. Do not emit full `LD_DEBUG` output normally.
+- [x] Distinguish missing HEIC support, legacy shared-private linkage, and confirmed GD/system symbol capture in errors; preserve “not enabling” semantics.
+- [x] Update `docs/how-it-works.md` to explain that SONAMEs isolate objects but not globally visible `heif_*` lookup, include the confirmed mixed 1.12.0/1.23.7 example, and describe PIC static linkage plus hidden/local symbols.
+- [x] Update `docs/troubleshooting.md` with exact CLI, Imagick-only, GD-first, and filtered binding probes. Explicitly reject disabling GD, global extension reordering, production `LD_PRELOAD`, and bypassing pre-flight.
+- [x] Update `docs/testing.md` for the repository collision sample, PHP 8.5 CI job, and ELF/runtime assertions; state why a generated HEIC alone cannot prove the iOS 18 auxiliary-image fix.
+- [x] Update `README.md` only if its concise safety/architecture text still says SONAME isolation alone is sufficient.
+- [x] Add an unreleased `CHANGELOG.md` entry for the confirmed interposition defect, static-hidden repair, cache invalidation, PHP 8.5 coverage, and preserved safety gate.
+- [x] Search `README.md` and `docs/` for `DEEPBIND`, `SONAME`, `libheif-heicfix`, and old `ldd` expectations; qualify or remove every stale unconditional claim.
+- [x] **Validation:** Docs match the new ELF layout; no page expects shared private libheif in `imagick.so`'s `ldd`; Docusaurus and offline links pass.
 
 **Commit:** `docs: explain static libheif isolation`
+
+**Validation evidence:** `npm run build` (Docusaurus 3.10) succeeded and
+`lychee --offline` reported 82 links, 0 errors. `grep -R` across `README.md`
+and `docs/` shows only the new, qualified statements; no page expects shared
+private libheif in `imagick.so`'s `ldd` output.
 
 ### Phase 4: Testing & Verification
 

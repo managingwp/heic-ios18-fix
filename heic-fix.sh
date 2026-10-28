@@ -6,9 +6,11 @@
 # (/opt/heic-ios18-fix by default) and builds a matching Imagick extension for
 # one or more PHP versions. System libraries are never replaced.
 #
-# The new libraries use private SONAMEs (libheif-heicfix.so.1,
-# libde265-heicfix.so.0) so the dynamic linker cannot satisfy them from the
-# system libheif that PHP's GD extension loads first.
+# libheif and libde265 are linked statically into libMagickCore with hidden
+# symbols, so the system libheif that PHP's GD extension loads first cannot
+# satisfy ImageMagick's heif_* calls. Private SONAMEs (libheif-heicfix.so.1,
+# libde265-heicfix.so.0) are kept for the shared diagnostic tools in the prefix.
+# A shared libheif dependency is refused by check, build and pre-flight.
 #
 # Copyright (c) 2026 Managing WP
 # SPDX-License-Identifier: MIT
@@ -43,12 +45,21 @@ MIN_LIBHEIF="1.18.2"
 # Bump when the Imagick source build recipe changes, so existing builds refresh.
 IMAGICK_BUILD_REV="1"
 
+# Bump when the static private-library build recipe changes, so existing
+# prefixes rebuild instead of reusing incompatible archives.
+LIBDE265_STATIC_BUILD_REV="1"
+LIBHEIF_STATIC_BUILD_REV="1"
+# Bump when the ImageMagick link recipe changes. This is what migrates a prefix
+# that linked shared libheif to the static-hidden layout.
+IMAGEMAGICK_LINKAGE_REV="1"
+
 RESOLVED_LIBDE265=""
 RESOLVED_LIBHEIF=""
 RESOLVED_IMAGEMAGICK=""
 RESOLVED_IMAGICK=""
 
 HEIF=""
+HEIF_STATIC=""
 IMAGEMAGICK=""
 SRC=""
 LOGS=""
@@ -510,6 +521,7 @@ load_versions() {
 
 init_paths() {
     HEIF="$PREFIX/heif"
+    HEIF_STATIC="$PREFIX/heif-static"
     IMAGEMAGICK="$PREFIX/imagemagick"
     SRC="$PREFIX/src"
     LOGS="$PREFIX/logs"
@@ -762,7 +774,7 @@ imagemagick_major() {
 libheif_path_for_ext() {
     local ext=$1
     local lib
-    lib=$(ldd "$ext" 2>/dev/null | awk '/libheif/ && $3 != "not" { print $3; exit }')
+    lib=$(env -u LD_PRELOAD ldd "$ext" 2>/dev/null | awk '/libheif/ && $3 != "not" { print $3; exit }')
     if [[ -n $lib ]]; then
         printf '%s\n' "$lib"
         return 0
@@ -779,7 +791,7 @@ libheif_path_for_ext() {
         fi
     done
     if [[ -z $mods ]]; then
-        core=$(ldd "$ext" 2>/dev/null | awk '/libMagickCore/ { print $3; exit }')
+        core=$(env -u LD_PRELOAD ldd "$ext" 2>/dev/null | awk '/libMagickCore/ { print $3; exit }')
         if [[ -n $core ]]; then
             core=$(readlink -f "$core" 2>/dev/null || printf '%s' "$core")
             mods=$(dirname -- "$core")
@@ -791,12 +803,50 @@ libheif_path_for_ext() {
             coder="$mods/coders/heic.so"
         fi
         if [[ -n $coder ]]; then
-            lib=$(ldd "$coder" 2>/dev/null | awk '/libheif/ && $3 != "not" { print $3; exit }')
+            lib=$(env -u LD_PRELOAD ldd "$coder" 2>/dev/null | awk '/libheif/ && $3 != "not" { print $3; exit }')
             if [[ -n $lib ]]; then
                 printf '%s\n' "$lib"
                 return 0
             fi
         fi
+    fi
+    return 1
+}
+
+# Static hidden linkage leaves no shared libheif to inspect, so the recorded
+# private version is the only correct answer. A shared libheif dependency means
+# the build is still exposed to the GD collision and must be rebuilt.
+libheif_static_marker() {
+    local core
+    core=$(magickcore_real_file) || return 1
+    magickcore_embeds_symbol "$core" heif_context_alloc || return 1
+    if grep -Eq '^libheif' <<<"$(magickcore_needed "$core")"; then
+        return 1
+    fi
+    printf '%s\n' "$IMAGEMAGICK/lib/libheif.a (static)"
+}
+
+# Prints "<path>\t<version>" for the libheif the given extension actually uses.
+# Our own extension is checked for static linkage first: falling through to the
+# generic heuristic could report a system coder that Imagick never loads.
+imagick_libheif_desc() {
+    local ext=$1 path ver
+    if [[ $ext == "$PREFIX"/* ]] && path=$(libheif_static_marker); then
+        ver=$(get_recorded "LIBHEIF_VERSION")
+        ver=${ver#v}
+        printf '%s\t%s\n' "$path" "${ver:-unknown}"
+        return 0
+    fi
+    if path=$(libheif_path_for_ext "$ext"); then
+        ver=$(libheif_version_for_path "$path" 2>/dev/null || true)
+        printf '%s\t%s\n' "$path" "${ver:-unknown}"
+        return 0
+    fi
+    if path=$(libheif_static_marker); then
+        ver=$(get_recorded "LIBHEIF_VERSION")
+        ver=${ver#v}
+        printf '%s\t%s\n' "$path" "${ver:-unknown}"
+        return 0
     fi
     return 1
 }
@@ -877,13 +927,15 @@ check_php_version() {
     im_major=$(imagemagick_major "$imver")
     formats=$(probe_value heic_formats)
 
-    local libheif="" libheif_ver="unknown"
-    if libheif=$(libheif_path_for_ext "$ext"); then
-        if libheif_ver=$(libheif_version_for_path "$libheif"); then
-            :
-        else
-            libheif_ver="unknown"
-        fi
+    local libheif="" libheif_ver="unknown" desc
+    if desc=$(imagick_libheif_desc "$ext"); then
+        libheif=${desc%%$'\t'*}
+        libheif_ver=${desc#*$'\t'}
+    fi
+
+    local linkage=""
+    if [[ $ext == "$PREFIX"/* ]]; then
+        linkage=$(magickcore_linkage_state)
     fi
 
     local decode="skipped" decode_err="" dims=""
@@ -922,6 +974,10 @@ check_php_version() {
             reasons+=("could not identify the libheif used by Imagick")
         fi
     fi
+    if [[ -n $linkage && $linkage != "static-hidden" ]]; then
+        status="affected"
+        reasons+=("ImageMagick libheif linkage is $linkage; GD can capture heif_* symbols")
+    fi
     if [[ $decode == "fail" ]]; then
         status="affected"
         reasons+=("sample decode failed")
@@ -942,8 +998,8 @@ check_php_version() {
     CHECK_RESULT=$status
 
     if (( QUIET )); then
-        printf 'php%s status=%s imagick=%s imagemagick=%s heic=%s libheif=%s decode=%s\n' \
-            "$ver" "$status" "${imagick_ver:-unknown}" "${im_major:-?}" "$heic_yes" "$libheif_ver" "$decode"
+        printf 'php%s status=%s imagick=%s imagemagick=%s heic=%s libheif=%s linkage=%s decode=%s\n' \
+            "$ver" "$status" "${imagick_ver:-unknown}" "${im_major:-?}" "$heic_yes" "$libheif_ver" "${linkage:-n/a}" "$decode"
         return 0
     fi
 
@@ -956,6 +1012,9 @@ check_php_version() {
         printf ' [%s]' "$libheif_ver"
     fi
     printf '\n'
+    if [[ -n $linkage ]]; then
+        printf '    libheif link : %s\n' "$linkage"
+    fi
     printf '    sample       : %s' "$sample_state"
     case $decode in
         ok) printf ' decode=ok (%s)' "$dims" ;;
@@ -1076,7 +1135,7 @@ cmd_check() {
 
 BUILD_PACKAGES=(
     build-essential cmake pkg-config git ca-certificates curl autoconf automake libtool
-    libjpeg-dev libpng-dev libwebp-dev libtiff-dev liblcms2-dev libxml2-dev
+    binutils libjpeg-dev libpng-dev libwebp-dev libtiff-dev liblcms2-dev libxml2-dev
     libfreetype6-dev libfontconfig1-dev zlib1g-dev libbz2-dev liblzma-dev
     libzstd-dev libaom-dev patchelf xz-utils
 )
@@ -1254,7 +1313,7 @@ build_libde265() {
     local real
     real=$(libde265_real_file)
     local notfound
-    notfound=$(ldd "$real" 2>/dev/null | awk '/not found/ { print }')
+    notfound=$(env -u LD_PRELOAD ldd "$real" 2>/dev/null | awk '/not found/ { print }')
     [[ -z $notfound ]] || die "libde265 has unresolved dependencies: $notfound"
 
     record_version "LIBDE265_MODE" "built"
@@ -1297,6 +1356,69 @@ ensure_libde265_soname() {
             patchelf --set-rpath "$HEIF/lib${rpath:+:$rpath}" "$f"
         fi
     done
+}
+
+# PIC static archives for MagickCore only. Keeping them out of $HEIF means the
+# shared tools and the diag path are untouched, and pkg-config cannot hand the
+# shared private library to ImageMagick by accident.
+build_libde265_static() {
+    local ver=$1
+    local plain
+    plain=$(strip_v "$ver")
+
+    if (( SYSTEM_LIBDE265 )); then
+        log "static libheif will use the system libde265 (--system-libde265)"
+        if [[ -e "$HEIF_STATIC/lib/libde265.a" || -f "$HEIF_STATIC/lib/pkgconfig/libde265.pc" ]]; then
+            warn "removing the private static libde265 from $HEIF_STATIC to use the system copy"
+            rm -f "$HEIF_STATIC/lib/libde265.a" "$HEIF_STATIC/lib/pkgconfig/libde265.pc"
+            rm -rf "$HEIF_STATIC/include/libde265"
+        fi
+        record_version "LIBDE265_STATIC_BUILD_REV" "system"
+        record_version "LIBDE265_STATIC_VERSION" "system"
+        return 0
+    fi
+
+    if [[ $(get_recorded "LIBDE265_STATIC_BUILD_REV") == "$LIBDE265_STATIC_BUILD_REV" ]] \
+        && [[ $(get_recorded "LIBDE265_STATIC_VERSION") == "$ver" ]] \
+        && [[ -f "$HEIF_STATIC/lib/libde265.a" ]]; then
+        log "static libde265 $ver already built; skipping"
+        return 0
+    fi
+
+    local archive="$SRC/libde265-$plain.tar.gz"
+    local srcdir="$SRC/libde265-$plain"
+    local builddir="$SRC/build-libde265-static-$plain"
+    local logfile="$LOGS/libde265-static-$ver.log"
+
+    # Drop only our static artifacts: a changed revision must not leave a stale
+    # archive or header set behind. Nothing under /usr is touched.
+    rm -f "$HEIF_STATIC/lib/libde265.a" "$HEIF_STATIC/lib/pkgconfig/libde265.pc"
+    rm -rf "$HEIF_STATIC/include/libde265"
+
+    download "https://github.com/strukturag/libde265/releases/download/$ver/libde265-$plain.tar.gz" "$archive"
+    extract_source "$archive" "$srcdir"
+    rm -rf "$builddir"
+
+    log_step "Building static libde265 $ver"
+    mkdir -p "$builddir" "$HEIF_STATIC"
+    pushd "$builddir" >/dev/null
+    run_logged "$logfile" nice_run cmake "$srcdir" \
+        -DCMAKE_INSTALL_PREFIX="$HEIF_STATIC" \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DENABLE_SDL=OFF \
+        -DENABLE_ENCODER=OFF
+    run_logged "$logfile" nice_run cmake --build . --parallel "$JOBS"
+    run_logged "$logfile" nice_run cmake --install .
+    popd >/dev/null
+
+    [[ -f "$HEIF_STATIC/lib/libde265.a" ]] \
+        || die "static libde265 archive not found under $HEIF_STATIC/lib"
+    record_version "LIBDE265_STATIC_BUILD_REV" "$LIBDE265_STATIC_BUILD_REV"
+    record_version "LIBDE265_STATIC_VERSION" "$ver"
+    ok "static libde265 $ver installed to $HEIF_STATIC"
 }
 
 # ---------------------------------------------------------------------------
@@ -1412,7 +1534,7 @@ build_libheif() {
 
     local real notfound
     real=$(libheif_real_file)
-    notfound=$(ldd "$real" 2>/dev/null | awk '/not found/ { print }')
+    notfound=$(env -u LD_PRELOAD ldd "$real" 2>/dev/null | awk '/not found/ { print }')
     [[ -z $notfound ]] || die "libheif has unresolved dependencies: $notfound"
 
     if (( SYSTEM_LIBDE265 )); then
@@ -1427,6 +1549,111 @@ build_libheif() {
     ok "libheif $ver installed to $HEIF"
 }
 
+# Static libheif is what MagickCore links. GD cannot interpose these symbols
+# because they end up inside libMagickCore instead of in a shared dependency.
+build_libheif_static() {
+    local ver=$1
+    local plain
+    plain=$(strip_v "$ver")
+
+    local de265_ver="system"
+    if (( ! SYSTEM_LIBDE265 )); then
+        de265_ver=$(get_recorded "LIBDE265_STATIC_VERSION")
+    fi
+
+    if [[ $(get_recorded "LIBHEIF_STATIC_BUILD_REV") == "$LIBHEIF_STATIC_BUILD_REV" ]] \
+        && [[ $(get_recorded "LIBHEIF_STATIC_VERSION") == "$ver" ]] \
+        && [[ $(get_recorded "LIBHEIF_STATIC_DE265") == "$de265_ver" ]] \
+        && [[ -f "$HEIF_STATIC/lib/libheif.a" ]]; then
+        log "static libheif $ver already built; skipping"
+        promote_static_pc_deps
+        return 0
+    fi
+
+    local archive="$SRC/libheif-$plain.tar.gz"
+    local srcdir="$SRC/libheif-$plain"
+    local builddir="$SRC/build-libheif-static-$plain"
+    local logfile="$LOGS/libheif-static-$ver.log"
+
+    rm -f "$HEIF_STATIC/lib/libheif.a" "$HEIF_STATIC/lib/pkgconfig/libheif.pc"
+    rm -rf "$HEIF_STATIC/include/libheif"
+
+    download "https://github.com/strukturag/libheif/releases/download/$ver/libheif-$plain.tar.gz" "$archive"
+    extract_source "$archive" "$srcdir"
+    rm -rf "$builddir"
+
+    local pc_path=""
+    if (( ! SYSTEM_LIBDE265 )); then
+        pc_path="$HEIF_STATIC/lib/pkgconfig"
+    fi
+
+    log_step "Building static libheif $ver"
+    mkdir -p "$builddir" "$HEIF_STATIC"
+    pushd "$builddir" >/dev/null
+    (
+        export PKG_CONFIG_PATH="${pc_path}${pc_path:+:}${PKG_CONFIG_PATH:-}"
+        run_logged "$logfile" nice_run cmake "$srcdir" \
+            -DCMAKE_INSTALL_PREFIX="$HEIF_STATIC" \
+            -DCMAKE_INSTALL_LIBDIR=lib \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DWITH_LIBDE265=ON \
+            -DWITH_X265=OFF \
+            -DWITH_AOM_DECODER=ON \
+            -DWITH_AOM_ENCODER=ON \
+            -DWITH_EXAMPLES=OFF \
+            -DWITH_GDK_PIXBUF=OFF \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_DOCUMENTATION=OFF \
+            -DENABLE_PLUGIN_LOADING=OFF
+        run_logged "$logfile" nice_run cmake --build . --parallel "$JOBS"
+        run_logged "$logfile" nice_run cmake --install .
+    )
+    popd >/dev/null
+
+    [[ -f "$HEIF_STATIC/lib/libheif.a" ]] \
+        || die "static libheif archive not found under $HEIF_STATIC/lib"
+
+    if (( SYSTEM_LIBDE265 )); then
+        log "static libheif $ver uses the system libde265"
+    else
+        [[ -f "$HEIF_STATIC/lib/libde265.a" ]] \
+            || die "static libheif was built without the private libde265 archive"
+    fi
+
+    promote_static_pc_deps
+
+    record_version "LIBHEIF_STATIC_BUILD_REV" "$LIBHEIF_STATIC_BUILD_REV"
+    record_version "LIBHEIF_STATIC_VERSION" "$ver"
+    record_version "LIBHEIF_STATIC_DE265" "$de265_ver"
+    ok "static libheif $ver installed to $HEIF_STATIC"
+}
+
+# A static-only install leaves its dependencies in Libs.private/Requires.private,
+# which plain "pkg-config --libs" ignores. ImageMagick's configure probe uses the
+# plain form, so promote the dependencies and point Libs at the archive itself.
+# Without this the probe cannot link and silently disables the HEIC delegate.
+promote_static_pc_deps() {
+    local pc="$HEIF_STATIC/lib/pkgconfig/libheif.pc"
+    [[ -f $pc ]] || die "static libheif pkg-config file missing: $pc"
+
+    local req_private libs_private
+    req_private=$(sed -n 's/^Requires\.private:[[:space:]]*//p' "$pc" | paste -sd' ' -)
+    libs_private=$(sed -n 's/^Libs\.private:[[:space:]]*//p' "$pc" | paste -sd' ' -)
+
+    if [[ -n $req_private ]]; then
+        sed -i "s|^Requires:.*|& $req_private|" "$pc"
+        sed -i '/^Requires\.private:/d' "$pc"
+    fi
+    if [[ -n $libs_private ]]; then
+        sed -i "s|^Libs:.*|& $libs_private|" "$pc"
+        sed -i '/^Libs\.private:/d' "$pc"
+    fi
+
+    sed -i "s|-lheif|$HEIF_STATIC/lib/libheif.a|" "$pc"
+}
+
 # ---------------------------------------------------------------------------
 # Build: ImageMagick 7
 # ---------------------------------------------------------------------------
@@ -1436,10 +1663,15 @@ build_imagemagick() {
     local logfile="$LOGS/imagemagick-$ver.log"
 
     if [[ $(get_recorded "IMAGEMAGICK_VERSION") == "$ver" ]] \
+        && [[ $(get_recorded "IMAGEMAGICK_LINKAGE_REV") == "$IMAGEMAGICK_LINKAGE_REV" ]] \
         && compgen -G "$IMAGEMAGICK/lib/libMagickCore-7*.so*" >/dev/null; then
         log "ImageMagick $ver already built; skipping"
         verify_imagemagick_linkage
         return 0
+    fi
+
+    if [[ $(get_recorded "IMAGEMAGICK_VERSION") == "$ver" ]]; then
+        log "ImageMagick $ver needs a rebuild: libheif must be linked statically into MagickCore"
     fi
 
     local archive="$SRC/ImageMagick-$ver.tar.xz"
@@ -1455,9 +1687,11 @@ build_imagemagick() {
         die "ImageMagick source has no configure script; cannot build"
     fi
     (
-        export PKG_CONFIG_PATH="$HEIF/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-        export CPPFLAGS="-I$HEIF/include"
-        export LDFLAGS="-L$HEIF/lib -Wl,-rpath,$IMAGEMAGICK/lib -Wl,-rpath,$HEIF/lib"
+        export PKG_CONFIG_PATH="$HEIF_STATIC/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+        # The static libheif .pc points Libs at the archive and carries its own
+        # dependencies, so the configure probe links without a shared fallback.
+        export CPPFLAGS="-I$HEIF_STATIC/include -DLIBHEIF_STATIC_BUILD"
+        export LDFLAGS="-Wl,-Bsymbolic-functions -Wl,--exclude-libs,ALL -Wl,-rpath,$IMAGEMAGICK/lib"
         run_logged "$logfile" nice_run ./configure \
             --prefix="$IMAGEMAGICK" \
             --with-heic=yes \
@@ -1469,6 +1703,8 @@ build_imagemagick() {
             --without-magick-plus-plus \
             --with-quantum-depth=16 \
             --enable-hdri
+        # Reconfiguring does not force a relink, so clear the previous objects.
+        run_logged "$logfile" nice_run make clean
         run_logged "$logfile" nice_run make -j "$JOBS"
         run_logged "$logfile" nice_run make install
     )
@@ -1476,7 +1712,67 @@ build_imagemagick() {
 
     verify_imagemagick_linkage
     record_version "IMAGEMAGICK_VERSION" "$ver"
+    record_version "IMAGEMAGICK_LINKAGE_REV" "$IMAGEMAGICK_LINKAGE_REV"
     ok "ImageMagick $ver installed to $IMAGEMAGICK"
+}
+
+magickcore_real_file() {
+    local lib
+    for lib in "$IMAGEMAGICK"/lib/libMagickCore-7*.so*; do
+        [[ -f $lib && ! -L $lib ]] || continue
+        printf '%s\n' "$lib"
+        return 0
+    done
+    return 1
+}
+
+magickcore_needed() {
+    readelf -d "$1" 2>/dev/null | sed -n 's/.*Shared library: \[\(.*\)\]/\1/p'
+}
+
+magickcore_embeds_symbol() {
+    local core=$1 sym=$2
+    readelf --wide --syms "$core" 2>/dev/null | awk -v s="$sym" '
+        $8 == s && $7 != "UND" { found = 1 }
+        END { exit !found }
+    '
+}
+
+# A MagickCore that exports heif_* can still be interposed when GD loads first.
+magickcore_exports_heif() {
+    readelf --wide --dyn-syms "$1" 2>/dev/null | awk '
+        $4 == "FUNC" && ($5 == "GLOBAL" || $5 == "WEAK") \
+            && $6 == "DEFAULT" && $7 != "UND" && $8 ~ /^heif_/ { print $8 }
+    '
+}
+
+# static-hidden: the decoder is inside MagickCore with local binding (the only
+# supported layout). shared: MagickCore still depends on a shared libheif, so GD
+# can satisfy its calls. mixed: a shared dependency plus embedded definitions.
+magickcore_linkage_state() {
+    local core needed
+    if ! core=$(magickcore_real_file); then
+        printf 'missing\n'
+        return 0
+    fi
+    needed=$(magickcore_needed "$core")
+    if grep -Eq '^libheif' <<<"$needed"; then
+        if magickcore_embeds_symbol "$core" heif_context_alloc; then
+            printf 'mixed\n'
+        else
+            printf 'shared\n'
+        fi
+        return 0
+    fi
+    if magickcore_exports_heif "$core" | grep -q .; then
+        printf 'mixed\n'
+        return 0
+    fi
+    if magickcore_embeds_symbol "$core" heif_context_alloc; then
+        printf 'static-hidden\n'
+        return 0
+    fi
+    printf 'unknown\n'
 }
 
 verify_imagemagick_linkage() {
@@ -1489,22 +1785,32 @@ verify_imagemagick_linkage() {
         die "unexpected ImageMagick version: ${version%%$'\n'*}"
     fi
 
-    local core="" lib
-    for lib in "$IMAGEMAGICK"/lib/libMagickCore-7*.so*; do
-        [[ -f $lib && ! -L $lib ]] || continue
-        core=$lib
-        break
-    done
-    [[ -n $core ]] || die "libMagickCore-7 not found under $IMAGEMAGICK/lib"
+    local core
+    core=$(magickcore_real_file) || die "libMagickCore-7 not found under $IMAGEMAGICK/lib"
 
     local needed
-    needed=$(ldd "$core" 2>/dev/null || true)
-    if [[ $needed != *"libheif-heicfix.so.1"* ]]; then
-        die "libMagickCore does not link libheif-heicfix.so.1; HEIC delegate is missing"
+    needed=$(magickcore_needed "$core")
+    if grep -Eq '^libheif' <<<"$needed"; then
+        die "libMagickCore still links a shared libheif ($(grep -E '^libheif' <<<"$needed" | paste -sd, -)); GD can capture its heif_* calls"
     fi
-    if [[ $needed == *"not found"* ]]; then
-        die "libMagickCore has unresolved dependencies: $(grep 'not found' <<<"$needed" | head -n 1)"
+    local mode
+    mode=$(get_recorded "LIBDE265_MODE")
+    if [[ $mode != "system" ]] && grep -Eq '^libde265' <<<"$needed"; then
+        die "libMagickCore still links a shared libde265 ($(grep -E '^libde265' <<<"$needed" | paste -sd, -))"
     fi
+    if ! magickcore_embeds_symbol "$core" heif_context_alloc; then
+        die "libMagickCore does not embed heif_context_alloc; the private decoder is not linked statically"
+    fi
+    local exported
+    exported=$(magickcore_exports_heif "$core")
+    if [[ -n $exported ]]; then
+        die "libMagickCore exports heif_* symbols ($(paste -sd, - <<<"$exported")); another library can interpose them"
+    fi
+
+    local unresolved
+    unresolved=$(env -u LD_PRELOAD ldd "$core" 2>/dev/null | awk '/not found/ { print; exit }')
+    [[ -z $unresolved ]] \
+        || die "libMagickCore has unresolved dependencies: $unresolved"
 
     local formats
     formats=$("$magick" -list format 2>/dev/null | awk '$1 ~ /^HEI[CF]\*?$/ { gsub(/\*$/, "", $1); print $1 }' | sort -u | paste -sd, - || true)
@@ -1642,21 +1948,17 @@ verify_imagick_linkage() {
     [[ -f $so ]] || die "missing $so"
 
     local ldd_out
-    ldd_out=$(ldd "$so" 2>/dev/null || true)
+    ldd_out=$(env -u LD_PRELOAD ldd "$so" 2>/dev/null || true)
     if [[ $ldd_out == *"not found"* ]]; then
         die "imagick.so has unresolved dependencies: $(grep 'not found' <<<"$ldd_out" | head -n 1)"
     fi
-    local mode
-    mode=$(get_recorded "LIBDE265_MODE")
-    if [[ $mode != "system" ]]; then
-        grep -q 'libheif-heicfix\.so\.1 =>' <<<"$ldd_out" \
-            || die "imagick.so does not resolve libheif-heicfix.so.1"
-        grep -q 'libde265-heicfix\.so\.0 =>' <<<"$ldd_out" \
-            || die "imagick.so does not resolve libde265-heicfix.so.0"
-        grep -q "libheif-heicfix\.so\.1 => $PREFIX/" <<<"$ldd_out" \
-            || die "libheif-heicfix.so.1 does not resolve inside $PREFIX"
-        grep -q "libde265-heicfix\.so\.0 => $PREFIX/" <<<"$ldd_out" \
-            || die "libde265-heicfix.so.0 does not resolve inside $PREFIX"
+    grep -q "libMagickCore-7.* => $IMAGEMAGICK/" <<<"$ldd_out" \
+        || die "imagick.so does not resolve libMagickCore-7 from $IMAGEMAGICK"
+
+    # A shared libheif here means GD can satisfy MagickCore's heif_* calls with
+    # the system copy. Static hidden linkage leaves no shared libheif at all.
+    if grep -Eq 'libheif[^ ]*\.so' <<<"$ldd_out"; then
+        die "imagick.so still resolves a shared libheif: $(grep -E 'libheif[^ ]*\.so' <<<"$ldd_out" | head -n 1)"
     fi
 }
 
@@ -1763,6 +2065,9 @@ if (extension_loaded("imagick")) {
     printf '  imagick      : %s\n' "${imagick_ver:-NOT LOADED}"
     printf '  ImageMagick  : %s\n' "${imver:-unknown}"
     printf '  HEIC formats : %s\n' "${formats:-none}"
+    local linkage
+    linkage=$(magickcore_linkage_state)
+    printf '  libheif link : %s\n' "$linkage"
     case $decode in
         ok) printf '  sample       : decode=ok\n' ;;
         fail) printf '  sample       : decode=FAIL: %s\n' "${decode_err:-unknown}" ;;
@@ -1774,6 +2079,10 @@ if (extension_loaded("imagick")) {
     [[ $imagick_ver != "" ]] || failed=1
     [[ ${imver:-} == *"ImageMagick 7"* ]] || failed=1
     [[ -n $formats && $formats != "-" ]] || failed=1
+    if [[ $linkage != "static-hidden" ]]; then
+        error "ImageMagick libheif linkage is $linkage; GD can capture a shared libheif's heif_* symbols"
+        failed=1
+    fi
     if [[ $decode == "fail" ]]; then
         failed=1
     fi
@@ -1814,6 +2123,7 @@ cmd_build() {
     fi
     printf '  libheif       : %s (minimum %s)\n' "$RESOLVED_LIBHEIF" "$MIN_LIBHEIF"
     printf '  ImageMagick   : %s\n' "$RESOLVED_IMAGEMAGICK"
+    printf '  libheif link  : static into MagickCore (hidden symbols)\n'
     printf '  make jobs     : %s\n' "$JOBS"
 
     if ! confirm "Build libde265, libheif and ImageMagick 7 into $PREFIX?"; then
@@ -1837,7 +2147,9 @@ cmd_build() {
     fi
 
     build_libde265 "$RESOLVED_LIBDE265"
+    build_libde265_static "$RESOLVED_LIBDE265"
     build_libheif "$RESOLVED_LIBHEIF" "$libheif_force"
+    build_libheif_static "$RESOLVED_LIBHEIF"
     build_imagemagick "$RESOLVED_IMAGEMAGICK"
 
     local state
@@ -1851,6 +2163,7 @@ cmd_build() {
     printf '\n%sBuild complete%s\n' "$C_GREEN" "$C_RESET"
     printf '  libheif       : %s\n' "$(get_recorded LIBHEIF_VERSION)"
     printf '  ImageMagick   : %s\n' "$(get_recorded IMAGEMAGICK_VERSION)"
+    printf '  libheif link  : %s\n' "$(magickcore_linkage_state)"
     printf '  logs          : %s\n' "$LOGS"
     printf '\nNext: %s php --php <X.Y>\n' "$SCRIPT_NAME"
 }
@@ -1880,6 +2193,14 @@ cmd_php() {
     if [[ -z $built_im ]] \
         || ! compgen -G "$IMAGEMAGICK/lib/libMagickCore-7*.so*" >/dev/null; then
         die "ImageMagick is not built in $PREFIX; run: $SCRIPT_NAME build"
+    fi
+
+    local linkage
+    linkage=$(magickcore_linkage_state)
+    if [[ $linkage != "static-hidden" ]]; then
+        error "ImageMagick in $PREFIX has libheif linkage=$linkage"
+        error "GD can capture a shared libheif's heif_* symbols, so this build is unsafe to enable"
+        die "rebuild the prefix first: $SCRIPT_NAME build"
     fi
 
     mkdir -p "$SRC" "$LOGS" "$PHPROOT" "$TMPDIR_PREFIX"
@@ -2111,36 +2432,42 @@ verify_fpm() {
 }
 
 verify_library_isolation() {
-    local ver=$1 so
+    local ver=$1 so ldd_out mode core linkage failed=0
     so=$(imagick_so "$ver")
-    if [[ ! -f $so ]]; then
-        printf '  Library isolation: %sFAIL%s %s missing\n' "$C_RED" "$C_RESET" "$so"
-        return 1
-    fi
-
-    local ldd_out mode
-    ldd_out=$(ldd "$so" 2>/dev/null || true)
-    mode=$(get_recorded "LIBDE265_MODE")
     printf '  Library isolation\n'
-    if [[ $mode == "system" ]]; then
-        printf '    mode        : system libde265\n'
-        if grep -q 'libheif-heicfix\.so\.1 =>' <<<"$ldd_out"; then
-            printf '    %sPASS%s libheif-heicfix.so.1 resolves\n' "$C_GREEN" "$C_RESET"
-            return 0
-        fi
-        printf '    %sFAIL%s libheif-heicfix.so.1 not resolved\n' "$C_RED" "$C_RESET"
+    if [[ ! -f $so ]]; then
+        printf '    %sFAIL%s %s missing\n' "$C_RED" "$C_RESET" "$so"
         return 1
     fi
 
-    local line failed=0
-    for line in "libheif-heicfix.so.1" "libde265-heicfix.so.0"; do
-        if grep -q "$line => $PREFIX/" <<<"$ldd_out"; then
-            printf '    %-24s %sPASS%s\n' "$line" "$C_GREEN" "$C_RESET"
-        else
-            printf '    %-24s %sFAIL%s (not resolved inside %s)\n' "$line" "$C_RED" "$C_RESET" "$PREFIX"
-            failed=1
-        fi
-    done
+    mode=$(get_recorded "LIBDE265_MODE")
+    core=$(magickcore_real_file) || true
+    linkage=$(magickcore_linkage_state)
+
+    if [[ $linkage == "static-hidden" ]]; then
+        printf '    %-24s %sPASS%s (linked into MagickCore)\n' "libheif" "$C_GREEN" "$C_RESET"
+    else
+        printf '    %-24s %sFAIL%s linkage=%s\n' "libheif" "$C_RED" "$C_RESET" "$linkage"
+        failed=1
+    fi
+    if [[ $mode == "system" ]]; then
+        printf '    %-24s system libde265 (allowed)\n' "libde265"
+    elif [[ -n $core ]] && magickcore_embeds_symbol "$core" de265_new_decoder; then
+        printf '    %-24s %sPASS%s (linked into MagickCore)\n' "libde265" "$C_GREEN" "$C_RESET"
+    else
+        printf '    %-24s %sFAIL%s private decoder is not embedded\n' "libde265" "$C_RED" "$C_RESET"
+        failed=1
+    fi
+
+    ldd_out=$(env -u LD_PRELOAD ldd "$so" 2>/dev/null || true)
+    if grep -Eq 'libheif[^ ]*\.so' <<<"$ldd_out"; then
+        printf '    %-24s %sFAIL%s %s\n' "imagick.so" "$C_RED" "$C_RESET" \
+            "$(grep -E 'libheif[^ ]*\.so' <<<"$ldd_out" | head -n 1)"
+        failed=1
+    else
+        printf '    %-24s %sPASS%s no shared libheif\n' "imagick.so" "$C_GREEN" "$C_RESET"
+    fi
+
     return "$failed"
 }
 
@@ -2184,6 +2511,19 @@ cmd_status() {
     else
         printf '  %-60s missing\n' "$IMAGEMAGICK/lib/libMagickCore-7"
     fi
+    if [[ -f "$HEIF_STATIC/lib/libheif.a" ]]; then
+        printf '  %-60s ok (static)\n' "$HEIF_STATIC/lib/libheif.a"
+    else
+        printf '  %-60s missing\n' "$HEIF_STATIC/lib/libheif.a"
+    fi
+    if [[ -f "$HEIF_STATIC/lib/libde265.a" ]]; then
+        printf '  %-60s ok (static)\n' "$HEIF_STATIC/lib/libde265.a"
+    elif [[ $(get_recorded "LIBDE265_MODE") == "system" ]]; then
+        printf '  %-60s using the system libde265\n' "$HEIF_STATIC/lib/libde265.a"
+    else
+        printf '  %-60s missing\n' "$HEIF_STATIC/lib/libde265.a"
+    fi
+    printf '  %-60s %s\n' "libheif linkage" "$(magickcore_linkage_state)"
 
     printf '\n%sPHP%s\n' "$C_BOLD" "$C_RESET"
     local ver targets=()
