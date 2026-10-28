@@ -1,3 +1,11 @@
+---
+title: Ubuntu 26.04 and newer
+description: Native iOS 18 HEIC support and the HEVC decoder plugin.
+layout: default
+---
+
+[← Docs home](../index.md) · [How it works](../how-it-works.md)
+
 # Ubuntu 26.04 and newer
 
 Ubuntu 26.04 ships a libheif that already contains the iOS 18 fix, so this
@@ -31,7 +39,8 @@ No decoding plugin installed for this compression format
 @ error/heic.c/IsHEIFSuccess/202
 ```
 
-This is a **different** failure from the iOS 18/Tmap errors in the main README.
+This is a **different** failure from the iOS 18/Tmap errors in
+[How it works](../how-it-works.md).
 The metadata is parsed correctly; no plugin can decode the HEVC payload yet.
 
 Install the decoder:

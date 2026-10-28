@@ -1,3 +1,11 @@
+---
+title: GridPane
+description: Runbook for GridPane-managed servers.
+layout: default
+---
+
+[← Docs home](../index.md) · [Getting started](../getting-started.md) · [Troubleshooting](../troubleshooting.md)
+
 # GridPane
 
 GridPane uses the standard Debian/Ubuntu PHP layout:
