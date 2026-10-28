@@ -32,12 +32,12 @@ server shares the same system ImageMagick and libheif.
 | Ubuntu 24.04 | 1.17.6 | fails |
 | Ubuntu 26.04 | 1.21.2 | iOS 18 bug fixed; install the HEVC decoder plugin |
 | Debian 12 | 1.15.1 | fails |
-| Any build with libheif ≥ 1.18.2 | ≥ 1.18.2 | works |
+| Any build with libheif ≥ 1.18.2 | ≥ 1.18.2 | works, with an HEVC decoder available |
 
 ### Ubuntu 26.04 and newer
 
 Ubuntu 26.04 ships **libheif 1.21.2** and **ImageMagick 7.1.2.18**, so the iOS 18
-`tmap` bug is fixed natively. **Do not build this prefix on 26.04.**
+`tmap` bug is fixed natively. **Do not build this prefix on a stock 26.04.**
 
 There is one separate catch: libheif 1.21 moves HEVC decoding into a plugin, and
 `libheif1` only *Suggests* it. A stock `imagemagick`/`php-imagick` install can
