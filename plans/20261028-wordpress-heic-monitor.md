@@ -94,17 +94,17 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 
 #### Tasks
 
-- [ ] Add `includes/probes/interface-heic-fix-monitor-probe.php`, `class-heic-fix-monitor-probe-engine.php`, and `class-heic-fix-monitor-probe-result.php`; validate every returned signal against the state/evidence schema and convert uncaught probe failures to bounded `error` evidence.
-- [ ] Add `includes/probes/class-heic-fix-monitor-imagick-probe.php`; run only from cron, CLI, or the nonce-gated manual action; enforce minimum interval, configured memory/time headroom, file checksum/type/size bounds, `extension_loaded( 'imagick' )`, `Imagick::queryFormats( 'HEI*' )`, one-frame decode, JPEG conversion, minimum bytes/dimensions, `clear()`/`destroy()`, and sanitized exception classification.
-- [ ] Copy `samples/failure_magick.HEIC` to `wordpress-plugin/heic-fix-monitor/assets/failure_magick.HEIC`, add its SHA-256 to `assets/SHA256SUMS`, and make the bundled verified copy the default; permit an absolute configured sample only after regular-file, readability, size, extension, and checksum-policy checks.
-- [ ] Add `includes/probes/class-heic-fix-monitor-command-runner.php` with `proc_open`, fixed binary plus escaped arguments, non-blocking reads, monotonic timeout, process termination, capped output, explicit exit/signal metadata, disabled-function detection, and no shell operators/environment inheritance beyond a minimal fixed environment.
-- [ ] Add `includes/probes/class-heic-fix-monitor-check-probe.php`; execute exactly `<allowlisted-heic-fix.sh> check -q --php <X.Y>` once per sorted target, parse only `phpX.Y` plus `status`, `imagick`, `imagemagick`, `heic`, `libheif`, `linkage`, and `decode`, reject duplicates/unknown/missing fields, map exits 0/1/2/3 exactly, and never retain full stdout/stderr.
-- [ ] Add `includes/probes/class-heic-fix-monitor-filesystem-probe.php`; use PHP filesystem APIs for prefix/static archives, `installed-versions.txt` allowlisted keys, extension, mods-available ini, and CLI/FPM `conf.d` symlinks. Never follow configured paths outside the canonical prefix and `/etc/php/<X.Y>` roots.
-- [ ] In the filesystem probe, optionally call fixed `/usr/bin/readelf` and `/usr/bin/ldd` through the runner to inspect the canonical MagickCore/Imagick files; require no shared libheif `NEEDED`, no exported `heif_*`, and no unresolved libraries. Mark command absence unavailable while retaining direct file facts.
-- [ ] Add filters only for tests (`hfm_probe_signals`, `hfm_command_result`, `hfm_now`); document that production callbacks must not be registered by the plugin and never expose arbitrary command execution.
-- [ ] **Validation:** fixture tests prove every probe mapping, parser rejection, timeout, output cap, allowlist rejection, no-shell command construction, sample checksum, and direct decode guard; a repository grep finds no invocation of `build`, `php`, `enable`, `rollback`, `sudo`, package managers, service controls, `eval`, remote include, or writes to configured server paths.
+- [x] Add `includes/probes/interface-heic-fix-monitor-probe.php`, `class-heic-fix-monitor-probe-engine.php`, and `class-heic-fix-monitor-probe-result.php`; validate every returned signal against the state/evidence schema and convert uncaught probe failures to bounded `error` evidence.
+- [x] Add `includes/probes/class-heic-fix-monitor-imagick-probe.php`; run only from cron, CLI, or the nonce-gated manual action; enforce minimum interval, configured memory/time headroom, file checksum/type/size bounds, `extension_loaded( 'imagick' )`, `Imagick::queryFormats( 'HEI*' )`, one-frame decode, JPEG conversion, minimum bytes/dimensions, `clear()`/`destroy()`, and sanitized exception classification.
+- [x] Copy `samples/failure_magick.HEIC` to `wordpress-plugin/heic-fix-monitor/assets/failure_magick.HEIC`, add its SHA-256 to `assets/SHA256SUMS`, and make the bundled verified copy the default; permit an absolute configured sample only after regular-file, readability, size, extension, and checksum-policy checks.
+- [x] Add `includes/probes/class-heic-fix-monitor-command-runner.php` with `proc_open`, fixed binary plus escaped arguments, non-blocking reads, monotonic timeout, process termination, capped output, explicit exit/signal metadata, disabled-function detection, and no shell operators/environment inheritance beyond a minimal fixed environment.
+- [x] Add `includes/probes/class-heic-fix-monitor-check-probe.php`; execute exactly `<allowlisted-heic-fix.sh> check -q --php <X.Y>` once per sorted target, parse only `phpX.Y` plus `status`, `imagick`, `imagemagick`, `heic`, `libheif`, `linkage`, and `decode`, reject duplicates/unknown/missing fields, map exits 0/1/2/3 exactly, and never retain full stdout/stderr.
+- [x] Add `includes/probes/class-heic-fix-monitor-filesystem-probe.php`; use PHP filesystem APIs for prefix/static archives, `installed-versions.txt` allowlisted keys, extension, mods-available ini, and CLI/FPM `conf.d` symlinks. Never follow configured paths outside the canonical prefix and `/etc/php/<X.Y>` roots.
+- [x] In the filesystem probe, optionally call fixed `/usr/bin/readelf` and `/usr/bin/ldd` through the runner to inspect the canonical MagickCore/Imagick files; require no shared libheif `NEEDED`, no exported `heif_*`, and no unresolved libraries. Mark command absence unavailable while retaining direct file facts.
+- [x] Add filters only for tests (`hfm_probe_signals`, `hfm_command_result`, `hfm_now`); document that production callbacks must not be registered by the plugin and never expose arbitrary command execution.
+- [x] **Validation:** fixture tests prove every probe mapping, parser rejection, timeout, output cap, allowlist rejection, no-shell command construction, sample checksum, and direct decode guard; a repository grep finds no invocation of `build`, `php`, `enable`, `rollback`, `sudo`, package managers, service controls, `eval`, remote include, or writes to configured server paths.
 
-**Commit:** `feat: add read-only HEIC probes`
+**Commit:** `6d4291e` — `feat: add read-only HEIC probes`
 
 ### Phase 4: Evaluate state and persist transitions
 
@@ -112,15 +112,15 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 
 #### Tasks
 
-- [ ] Add `includes/class-heic-fix-monitor-state-evaluator.php` implementing the confirmed precedence and explicit reason codes; require both primary decode and static-hidden evidence for `ok`, while mapping unavailable secondary/tertiary execution to `degraded` rather than hiding it.
-- [ ] Add `includes/class-heic-fix-monitor-normalizer.php`; sort PHP targets/signals/evidence keys, coerce scalar types, cap values, remove timestamps/hostnames/paths beyond approved identifiers/raw text/secrets, encode schema-versioned JSON, and compute a SHA-256 fingerprint.
-- [ ] Add `includes/class-heic-fix-monitor-state-store.php`; store current normalized result, fingerprint, previous state/fingerprint, first seen, last checked, last changed, last good, last notified, and last reminder as one bounded `autoload=no` site option.
-- [ ] Implement event derivation: silent first `ok`; first non-`ok` regression; state/fingerprint material change; one non-`ok` → `ok` recovery; unchanged failures silent before re-notify and one reminder after; digest/heartbeat generated separately without changing fingerprint history.
-- [ ] Add corruption handling: invalid option shape/version is preserved only as a redacted diagnostic code, replaced atomically with a fresh `error` state, and never decoded with `unserialize()` or `maybe_unserialize()` on attacker-controlled content.
-- [ ] Apply the fixture matrix through the evaluator/store in order, including identical repeated failures and recovery, and assert exact event counts and stable fingerprints.
-- [ ] **Validation:** fixture runner exits 0 with expected states (`ok`, `affected`, `missing`, `degraded`, `error`), identical normalized inputs hash identically regardless of key order/time, repeated failures emit no duplicate before the window, and recovery emits exactly once.
+- [x] Add `includes/class-heic-fix-monitor-state-evaluator.php` implementing the confirmed precedence and explicit reason codes; require both primary decode and static-hidden evidence for `ok`, while mapping unavailable secondary/tertiary execution to `degraded` rather than hiding it.
+- [x] Add `includes/class-heic-fix-monitor-normalizer.php`; sort PHP targets/signals/evidence keys, coerce scalar types, cap values, remove timestamps/hostnames/paths beyond approved identifiers/raw text/secrets, encode schema-versioned JSON, and compute a SHA-256 fingerprint.
+- [x] Add `includes/class-heic-fix-monitor-state-store.php`; store current normalized result, fingerprint, previous state/fingerprint, first seen, last checked, last changed, last good, last notified, and last reminder as one bounded `autoload=no` site option.
+- [x] Implement event derivation: silent first `ok`; first non-`ok` regression; state/fingerprint material change; one non-`ok` → `ok` recovery; unchanged failures silent before re-notify and one reminder after; digest/heartbeat generated separately without changing fingerprint history.
+- [x] Add corruption handling: invalid option shape/version is preserved only as a redacted diagnostic code, replaced atomically with a fresh `error` state, and never decoded with `unserialize()` or `maybe_unserialize()` on attacker-controlled content.
+- [x] Apply the fixture matrix through the evaluator/store in order, including identical repeated failures and recovery, and assert exact event counts and stable fingerprints.
+- [x] **Validation:** fixture runner exits 0 with expected states (`ok`, `affected`, `missing`, `degraded`, `error`), identical normalized inputs hash identically regardless of key order/time, repeated failures emit no duplicate before the window, and recovery emits exactly once.
 
-**Commit:** `feat: track HEIC monitor transitions`
+**Commit:** `d5d8cb0` — `feat: track HEIC monitor transitions`
 
 ### Phase 5: Add redacted notification channels
 
