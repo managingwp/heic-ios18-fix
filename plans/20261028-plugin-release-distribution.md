@@ -65,15 +65,15 @@ Defaults are executable; change only if a different audience or release policy i
 
 #### Tasks
 
-- [ ] Add `.github/workflows/release-plugin.yml` triggered only by pushed `heic-monitor-v*` tags, with `contents: write` restricted to the publish job, a tag-scoped concurrency group, and a checkout of the exact tagged commit.
-- [ ] In the build job, install PHP 8.2 with sodium/zip and WPCS, run `python3 bin/release.py check --tag "${GITHUB_REF_NAME}"`, execute `tests/ci-plugin.sh`, build the ZIP, and write `heic-fix-monitor.zip.sha256` with a basename-only path.
-- [ ] Upload the ZIP and checksum as build artifacts; the publish job downloads them and creates the release with `gh release create`, `--latest=false`, a generated `--notes-file`, and both assets. Never use `--clobber`, force-push, or retag a published version.
-- [ ] Make publication rerunnable: if the release exists as a draft, upload assets to that draft and publish it; if the release is already published, fail with a clear message instead of replacing assets.
-- [ ] Generate release notes from the tag and plugin metadata: version, WordPress/PHP minimums, install steps, SHA-256 verification command, read-only behavior summary, and a link to the configuration and troubleshooting pages.
-- [ ] Add `wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` using the Python standard library to assert the tag filter, exact-tag checkout, version check, test invocation, checksum basename, `--latest=false`, both asset names, and absence of `--clobber`.
-- [ ] **Validation:** `python3 wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` exits 0; `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/release-plugin.yml` exits 0; `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.0` still exits 0.
+- [x] Add `.github/workflows/release-plugin.yml` triggered only by pushed `heic-monitor-v*` tags, with `contents: write` restricted to the publish job, a tag-scoped concurrency group, and a checkout of the exact tagged commit.
+- [x] In the build job, install PHP 8.2 with sodium/zip and WPCS, run `python3 bin/release.py check --tag "${GITHUB_REF_NAME}"`, execute `tests/ci-plugin.sh`, build the ZIP, and write `heic-fix-monitor.zip.sha256` with a basename-only path.
+- [x] Upload the ZIP and checksum as build artifacts; the publish job downloads them and creates the release with `gh release create`, `--latest=false`, a generated `--notes-file`, and both assets. Never use `--clobber`, force-push, or retag a published version.
+- [x] Make publication rerunnable: if the release exists as a draft, upload assets to that draft and publish it; if the release is already published, fail with a clear message instead of replacing assets.
+- [x] Generate release notes from the tag and plugin metadata: version, WordPress/PHP minimums, install steps, SHA-256 verification command, read-only behavior summary, and a link to the configuration and troubleshooting pages.
+- [x] Add `wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` using the Python standard library to assert the tag filter, exact-tag checkout, version check, test invocation, checksum basename, `--latest=false`, both asset names, and absence of `--clobber`.
+- [x] **Validation:** `python3 wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` exits 0; `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/release-plugin.yml` exits 0; `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.0` still exits 0.
 
-**Commit:** `ci: publish plugin releases from tags`
+**Commit:** `11c9ae5` — `ci: publish plugin releases from tags`
 
 ### Phase 3: Add the public plugin download page
 
