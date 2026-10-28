@@ -1,0 +1,154 @@
+name: Release plugin
+
+on:
+  push:
+    tags:
+      - 'heic-monitor-v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugin-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build plugin release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: sodium, zip
+          tools: composer, phpcs
+          coverage: none
+
+      - name: Install WordPress Coding Standards
+        run: |
+          composer global require --no-interaction \
+            wp-coding-standards/wpcs \
+            dealerdirect/phpcodesniffer-composer-installer
+          echo "$HOME/.composer/vendor/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.config/composer/vendor/bin" >> "$GITHUB_PATH"
+
+      - name: Validate plugin tag and metadata
+        run: |
+          python3 wordpress-plugin/heic-fix-monitor/bin/release.py check \
+            --tag "${GITHUB_REF_NAME}"
+
+      - name: Run WordPress Coding Standards
+        run: |
+          cd wordpress-plugin/heic-fix-monitor
+          phpcs --standard=phpcs.xml.dist .
+
+      - name: Run plugin tests
+        run: bash wordpress-plugin/heic-fix-monitor/tests/ci-plugin.sh
+
+      - name: Build and checksum the WordPress ZIP
+        run: |
+          cd wordpress-plugin/heic-fix-monitor
+          bash bin/build-zip.sh
+          cd artifacts
+          sha256sum heic-fix-monitor.zip > heic-fix-monitor.zip.sha256
+          python3 ../tests/assert-zip-contents.py heic-fix-monitor.zip
+          cat heic-fix-monitor.zip.sha256
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-release-assets
+          path: wordpress-plugin/heic-fix-monitor/artifacts/heic-fix-monitor.zip*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish plugin release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-release-assets
+          path: release-assets
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -Eeuo pipefail
+
+          version="${TAG#heic-monitor-v}"
+          checksum=$(cut -d' ' -f1 release-assets/heic-fix-monitor.zip.sha256)
+
+          cat > release-notes.md <<EOF
+          ## HEIC Fix Monitor ${version}
+
+          Read-only monitoring and transition alerts for the iOS 18 HEIC/Imagick
+          repair. This release is installable as a standard WordPress plugin ZIP.
+
+          ### Install
+
+          1. Download \`heic-fix-monitor.zip\`.
+          2. In WordPress, open **Plugins → Add New → Upload Plugin**.
+          3. Upload the ZIP, activate it, then open **Settings → HEIC Fix Monitor**.
+
+          ### Verify the download
+
+          \`\`\`bash
+          sha256sum -c heic-fix-monitor.zip.sha256
+          \`\`\`
+
+          Expected: \`heic-fix-monitor.zip: OK\`
+
+          SHA-256: \`${checksum}\`
+
+          ### Compatibility
+
+          - WordPress 6.4 or newer
+          - PHP 8.0 or newer
+          - No Composer dependencies at runtime
+
+          ### Read-only
+
+          The plugin never builds, enables, disables or repairs Imagick. It reads
+          server state, decodes the bundled verified sample once per check, and
+          never writes outside its own options and transients.
+
+          - [Configuration](https://managingwp.github.io/heic-ios18-fix/plugin-download/)
+          - [Troubleshooting](https://managingwp.github.io/heic-ios18-fix/troubleshooting/)
+          EOF
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            draft=$(gh release view "$TAG" --json isDraft --jq '.isDraft')
+            if [ "$draft" != "true" ]; then
+              echo "error: release $TAG is already published; refusing to replace assets" >&2
+              exit 1
+            fi
+            for asset in heic-fix-monitor.zip heic-fix-monitor.zip.sha256; do
+              gh release delete-asset "$TAG" "$asset" --yes >/dev/null 2>&1 || true
+            done
+            gh release upload "$TAG" \
+              release-assets/heic-fix-monitor.zip \
+              release-assets/heic-fix-monitor.zip.sha256
+            gh release edit "$TAG" --draft=false --latest=false --notes-file release-notes.md
+          else
+            gh release create "$TAG" \
+              release-assets/heic-fix-monitor.zip \
+              release-assets/heic-fix-monitor.zip.sha256 \
+              --verify-tag \
+              --title "HEIC Fix Monitor ${version}" \
+              --notes-file release-notes.md \
+              --latest=false
+          fi

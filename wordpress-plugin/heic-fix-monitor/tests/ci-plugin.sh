@@ -10,6 +10,9 @@ cd "$ROOT"
 find . -type f -name '*.php' -print0 | xargs -0 -n1 php -l >/dev/null
 echo "PASS: PHP lint"
 
+python3 tests/test-release.py
+python3 tests/test-release-workflow.py
+
 python3 -c 'import glob,json; [json.load(open(p)) for p in glob.glob("tests/fixtures/*.json")]'
 echo "PASS: fixture JSON parses"
 
