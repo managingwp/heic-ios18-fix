@@ -53,7 +53,9 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 - **Creation:** `plan-generation-skill` (v5 PGF contract, validation, test ledger, and approval workflow); `lmt-skills-development-workflow` (sync, per-phase commits, push, inclusive terminology, and release ownership); `wp-plugin-dev` (modular plugin/zip architecture); `settings-options-security` (typed Settings API schema and non-autoloaded options); `cron-background-job-security` (duplicate-safe site schedules and no-user cron context); `http-api-ssrf-prevention` (safe webhook delivery); `secrets-credentials-management` (constant-first encrypted secrets); `output-escaping` and `input-sanitization-validation` (late escaping and strict input schemas); `capability-permission-checks` and `nonces-csrf-protection` (privileged admin actions); `wp-cli-security` (argument-safe, non-destructive CLI); `user-data-protection-privacy` (data minimization and policy text); `dependency-supply-chain-security` (no runtime dependencies/remote code and minimal zip).
 - **Implementation:** none yet.
 
-## Phases### Phase 1: Freeze the plugin and probe contracts
+## Phases
+
+### Phase 1: Freeze the plugin and probe contracts
 
 **Goal:** Record executable interfaces, state precedence, fixtures, and packaging boundaries before runtime code is introduced.
 
