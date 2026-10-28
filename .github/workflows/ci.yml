@@ -23,6 +23,26 @@ jobs:
       - name: Run shellcheck
         run: shellcheck -x heic-fix.sh tests/*.sh
 
+  docs:
+    name: docs build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Jekyll site
+        run: |
+          docker run --rm \
+            -v "$PWD/docs:/srv/jekyll" \
+            -w /srv/jekyll \
+            jekyll/jekyll:4.4.1 \
+            bash -c 'bundle install --quiet && bundle exec jekyll build'
+      - name: Check local links
+        run: |
+          docker run --rm \
+            -v "$PWD:/input" \
+            lycheeverse/lychee:latest \
+            --offline --no-progress /input/README.md /input/docs
+
   container-test:
     name: Ubuntu ${{ matrix.ubuntu }} (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest

@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+* GitHub Pages documentation site under `docs/` with a landing page,
+  getting-started guide, command reference, platform pages and monitoring.
+* Public iPhone 15 Pro / iOS 18.0 HEIC sample (libheif #1190) at
+  `samples/failure_magick.HEIC` with a verified SHA256 checksum.
+* Docs build and link check in CI.
+
+### Changed
+
+* Root `README.md` reduced to a short entry point; detailed material now lives
+  under `docs/`.
+* `monitoring/README.md` and `samples/README.md` are pointers to their docs
+  pages.
+
 ## [1.0.2] - 2026-10-28
 
 ### Added
