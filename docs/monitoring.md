@@ -31,12 +31,12 @@ the alert firing.
 `check -q` prints one line per PHP version:
 
 ```text
-php8.3 status=ok imagick=3.8.1 imagemagick=7 heic=yes libheif=1.23.7 decode=ok
-php8.3 status=affected imagick=3.8.1 imagemagick=6 heic=yes libheif=1.17.6 decode=fail
+php8.3 status=ok imagick=3.8.1 imagemagick=7 heic=yes libheif=1.23.7 linkage=static-hidden decode=ok
+php8.3 status=affected imagick=3.8.1 imagemagick=6 heic=yes libheif=1.17.6 linkage=n/a decode=fail
 ```
 
 Fields are stable: `status`, `imagick`, `imagemagick` (major), `heic`, `libheif`,
-`decode`.
+`linkage`, `decode`.
 
 ## Cron: silent when OK
 

@@ -39,8 +39,10 @@ This gives you:
 
 * `/opt/heic-ios18-fix/heif/bin/heif-dec` — the isolated decoder, usable from a
   WordPress upload hook,
-* `/opt/heic-ios18-fix/imagemagick/bin/magick` — ImageMagick 7,
-* private `libheif-heicfix.so.1` / `libde265-heicfix.so.0`.
+* `/opt/heic-ios18-fix/imagemagick/bin/magick` — ImageMagick 7, with libheif
+  linked statically into MagickCore,
+* private `libheif-heicfix.so.1` / `libde265-heicfix.so.0` for the diagnostic
+  tools.
 
 You can convert an upload with `heif-dec` without touching PHP's Imagick:
 

@@ -8,11 +8,29 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+* `check`, `verify` and the pre-flight now report `linkage=` and require
+  `static-hidden`: the private libheif is linked into `libMagickCore` with
+  hidden symbols. A prefix that still depends on a shared libheif is reported
+  as AFFECTED and is not enabled.
+* Container regression that decodes `samples/failure_magick.HEIC` through the
+  private CLI, Imagick alone and GD-first, then asserts the ELF and runtime
+  binding contract. CI adds Ubuntu 22.04 with PHP 8.5.
 * GitHub Pages documentation site with a landing page, getting-started guide,
   command reference, platform pages and monitoring.
 * Public iPhone 15 Pro / iOS 18.0 HEIC sample (libheif #1190) at
   `samples/failure_magick.HEIC` with a verified SHA256 checksum.
 * Docs build and link check in CI.
+
+### Fixed
+
+* GD could capture ImageMagick's `heif_*` calls on Ubuntu 22.04 with PHP 8.5.
+  Private SONAMEs isolated the loaded objects but not the exported function
+  names, so `heif_context_alloc`, `heif_context_read_from_file` and
+  `heif_context_free` bound to the system libheif 1.12.0 while another call
+  bound to the private 1.23.7 library. `build` now compiles PIC static
+  libde265/libheif archives and links them into MagickCore with
+  `--exclude-libs,ALL` and `-Bsymbolic-functions`. Existing prefixes rebuild
+  once through the new `IMAGEMAGICK_LINKAGE_REV` marker.
 
 ### Changed
 

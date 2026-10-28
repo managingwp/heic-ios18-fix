@@ -37,8 +37,10 @@ sudo ./heic-fix.sh rollback --php 8.3
 ## What it does
 
 - Builds **libde265**, **libheif** and **ImageMagick 7** in an isolated prefix.
-- Uses private SONAMEs (`libheif-heicfix.so.1`, `libde265-heicfix.so.0`) so
-  PHP GD's system libheif cannot be reused by the new ImageMagick.
+- Links the private libheif and libde265 **statically into MagickCore** with
+  hidden symbols, so PHP GD's system libheif cannot capture ImageMagick's
+  `heif_*` calls. Private SONAMEs (`libheif-heicfix.so.1`,
+  `libde265-heicfix.so.0`) remain for the shared diagnostic tools.
 - Builds one Imagick extension per PHP ABI and runs a pre-flight with GD loaded.
 - Provides `check`, `build`, `php`, `enable`, `rollback`, `verify`, `status` and
   `deps`; detects GridPane and marks RunCloud PHP wiring `TODO(runcloud)`.
@@ -62,7 +64,7 @@ sudo ./heic-fix.sh rollback --php 8.3
 | `php --php X.Y` | yes | Builds Imagick, runs the GD-loaded pre-flight, enables it. |
 | `enable --php X.Y` | yes | Enables an already-built extension and reloads FPM. |
 | `rollback --php X.Y` | yes | Restores stock imagick and reloads FPM. |
-| `verify --php X.Y` | no | Checks CLI and FPM, sample decode and private SONAMEs. |
+| `verify --php X.Y` | no | Checks CLI and FPM, sample decode and static-hidden linkage. |
 | `status` | no | Shows the prefix and what is enabled. |
 | `deps` | no | Shows build package and tool status. |
 
@@ -95,7 +97,7 @@ Published site: <https://managingwp.github.io/heic-ios18-fix/>
 | --- | --- |
 | [Getting started](docs/getting-started.md) | Requirements, install, rollback, uninstall |
 | [Commands](docs/commands.md) | Commands, options, exit codes, quiet output |
-| [How it works](docs/how-it-works.md) | Problem, symptoms, SONAME isolation, pre-flight, needrestart |
+| [How it works](docs/how-it-works.md) | Problem, symptoms, static symbol isolation, pre-flight, needrestart |
 | [GridPane](docs/platforms/gridpane.md) | GridPane runbook and update notes |
 | [RunCloud](docs/platforms/runcloud.md) | Build support and unimplemented wiring |
 | [Ubuntu 26.04](docs/platforms/ubuntu-26-04.md) | Native fix and HEVC plugin |

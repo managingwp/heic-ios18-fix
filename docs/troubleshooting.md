@@ -124,3 +124,79 @@ Run the PHP step first:
 
 `build` only compiles libde265, libheif and ImageMagick 7. It does not create
 `/opt/heic-ios18-fix/php/8.3/imagick.so`; `php` does that and enables it.
+
+## Decoding fails only when GD is loaded
+
+### Symptom
+
+The private tools decode the photo, but PHP fails once `gd.so` is loaded:
+
+```text
+ImagickException: Invalid input: Unspecified:
+Too many auxiliary image references (2.0)
+  @ error/heic.c/IsHEIFSuccess/207
+```
+
+`php -n -d extension=imagick.so` decodes; `php -n -d extension=gd.so -d
+extension=imagick.so` fails. `check` reports `linkage=shared` or `Linkage:
+mixed` for the prefix extension.
+
+### Cause
+
+The prefix was built with private SONAMEs only. GD loads the system
+`libheif.so.1` and exports its `heif_*` functions globally; a SONAME isolates
+the loaded object but not the function names, so ImageMagick's calls bind to
+the system libheif. Known to happen on Ubuntu 22.04 with PHP 8.5.
+
+### Confirm it
+
+```bash
+cd ~/heic-ios18-fix
+
+# 1. Private CLI — proves the build itself is fine
+/opt/heic-ios18-fix/imagemagick/bin/magick samples/failure_magick.HEIC[0] null:
+
+# 2. Imagick alone and GD first — the split identifies symbol capture
+for mode in imagick-only gd-first; do
+    printf '\n=== %s ===\n' "$mode"
+    args=(-n)
+    [[ $mode == gd-first ]] && args+=(-d extension=gd.so)
+    php8.5 "${args[@]}" -d extension=/opt/heic-ios18-fix/php/8.5/imagick.so \
+        -r '$im = new Imagick($argv[1]); $im->setImageFormat("jpeg");
+            printf("bytes=%d\n", strlen($im->getImageBlob()));' \
+        samples/failure_magick.HEIC
+done
+
+# 3. Show which library each call binds to
+LD_DEBUG=bindings php8.5 -n -d extension=gd.so \
+    -d extension=/opt/heic-ios18-fix/php/8.5/imagick.so \
+    -r '$im = new Imagick($argv[1]); $im->setImageFormat("jpeg"); $im->getImageBlob();' \
+    samples/failure_magick.HEIC 2>&1 |
+    grep -E 'binding file .*libMagickCore.* to .*libheif'
+```
+
+Any `libMagickCore → /lib/.../libheif.so.1` line confirms the problem.
+
+### Fix
+
+Rebuild the prefix; this is a link-layout change, not a library upgrade:
+
+```bash
+cd ~/heic-ios18-fix
+sudo ./heic-fix.sh build
+sudo ./heic-fix.sh php --php 8.5
+sudo ./heic-fix.sh verify --php 8.5
+```
+
+`build` links the private static archives into `libMagickCore` with hidden
+symbols. `check`, `verify` and the pre-flight now require
+`libheif link : static-hidden` and refuse to enable anything else.
+
+### Do not
+
+- disable `gd.so` or change the global extension order — other code depends on
+  GD, and the order is not yours to guarantee;
+- add the prefix to `LD_PRELOAD` or `/etc/ld.so.conf.d` in production — it
+  changes every process on the server;
+- run `enable` after a failed pre-flight. The refusal is the safety gate.
+

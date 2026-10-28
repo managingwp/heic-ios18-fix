@@ -100,11 +100,12 @@ Then reload the PHP-FPM service used by the sites.
 ## Why the GD workaround is not needed
 
 On 22.04/24.04 the system has an old libheif, so this repository builds a
-private new one with unique SONAMEs to avoid GD's old `libheif.so.1`.
+private new one and links it statically into MagickCore. That keeps GD's old
+`libheif.so.1` from capturing ImageMagick's `heif_*` calls.
 
 On 26.04, GD and ImageMagick both use the same system libheif 1.21.2. There is
-no old/new collision, no `libheif-heicfix.so.1`, and no reason to install the
-prefix.
+no old/new collision, no private `libheif-heicfix.so.1`, and no reason to
+install the prefix.
 
 ## If the workaround was already installed on 26.04
 

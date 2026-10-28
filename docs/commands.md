@@ -10,11 +10,11 @@ description: All heic-fix.sh commands, options, exit codes and quiet output.
 | Command | Root? | What it does |
 | --- | --- | --- |
 | `check` | no | Read-only. Per PHP version: Imagick version, HEIC formats, loaded `imagick.so`, the libheif it really uses, and a sample decode. Prints a best-effort site → PHP map from FPM pools. Exit codes 0/1/2/3. |
-| `build` | yes | Installs build dependencies, builds libde265 → libheif → ImageMagick 7 into the prefix. Records versions and verifies linkage and decoding. |
-| `php --php X.Y` | yes | Installs `phpX.Y-dev`, builds Imagick from the pinned git tag, runs a realistic pre-flight (GD loaded), then offers to enable it. |
+| `build` | yes | Installs build dependencies, builds libde265 → libheif → ImageMagick 7 into the prefix, and links the private static archives into `libMagickCore` with hidden symbols. Records versions and verifies linkage and decoding. |
+| `php --php X.Y` | yes | Installs `phpX.Y-dev`, builds Imagick from the pinned git tag, runs a realistic pre-flight (GD loaded, static-hidden linkage required), then offers to enable it. |
 | `enable --php X.Y` | yes | Enables an already-built Imagick and reloads FPM. |
 | `rollback --php X.Y` | yes | Disables `imagick-heic`, re-enables stock `imagick`, reloads FPM. |
-| `verify --php X.Y` | no | Checks CLI and `php-fpmX.Y` both report ImageMagick 7, warns about duplicate imagick ini files, decodes the sample, and confirms the private SONAMEs resolve inside the prefix. |
+| `verify --php X.Y` | no | Checks CLI and `php-fpmX.Y` both report ImageMagick 7, warns about duplicate imagick ini files, decodes the sample, and confirms the private decoder is linked statically into MagickCore with no shared libheif. |
 | `status` | no | Shows the prefix, recorded versions, built artifacts, per-PHP extension state and the system libheif package. |
 | `deps` | no | Lists build package and tool status. |
 
@@ -46,12 +46,14 @@ description: All heic-fix.sh commands, options, exit codes and quiet output.
 `check -q` prints one line per PHP version, suitable for monitoring:
 
 ```text
-php8.3 status=affected imagick=3.8.1 imagemagick=6 heic=yes libheif=1.17.6 decode=fail
-php8.3 status=ok imagick=3.8.1 imagemagick=7 heic=yes libheif=1.23.7 decode=ok
+php8.3 status=affected imagick=3.8.1 imagemagick=6 heic=yes libheif=1.17.6 linkage=n/a decode=fail
+php8.3 status=ok imagick=3.8.1 imagemagick=7 heic=yes libheif=1.23.7 linkage=static-hidden decode=ok
 ```
 
 Fields are stable: `status`, `imagick`, `imagemagick` (major), `heic`, `libheif`,
-`decode`.
+`linkage`, `decode`. `linkage=static-hidden` is the only healthy value for a
+prefix extension; `shared`, `mixed` or `unknown` means the prefix needs a
+rebuild.
 
 ## Version overrides
 

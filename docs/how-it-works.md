@@ -1,6 +1,6 @@
 ---
 title: How it works
-description: Why older libheif fails, and how the private ImageMagick and SONAME isolation work.
+description: Why older libheif fails, and how the private ImageMagick and static symbol isolation work.
 ---
 
 [← Docs home](index.md) · [Getting started](getting-started.md) · [Commands](commands.md)
@@ -51,6 +51,11 @@ The `undefined symbol` error is the GD trap described below.
 │       ├── libde265-heicfix.so.0
 │       ├── libheif-heicfix.so.1
 │       └── pkgconfig/
+├── heif-static/                 PIC archives linked into MagickCore
+│   └── lib/
+│       ├── libde265.a
+│       ├── libheif.a
+│       └── pkgconfig/
 ├── imagemagick/                 ImageMagick 7.1.x, Q16-HDRI
 │   ├── bin/magick
 │   └── lib/libMagickCore-7.Q16HDRI.so
@@ -62,6 +67,8 @@ The `undefined symbol` error is the GD trap described below.
 └── installed-versions.txt
 ```
 
+`heif/` is the shared build used by the diagnostic tools. `heif-static/` holds
+the archives that are linked into ImageMagick, so the two roles stay separate.
 Nothing here shadows or replaces `/usr/lib`. The system ImageMagick and libheif
 remain available to other software.
 
@@ -81,43 +88,62 @@ The stock `imagick.ini` is disabled with `phpdismod -v 8.3 imagick`, and
 `phpenmod -v 8.3 imagick-heic` creates the CLI/FPM symlinks. FPM is reloaded
 only after confirmation.
 
-## The GD / SONAME trap
+## The GD symbol-capture trap
 
 PHP's GD extension (`gd.so`) is linked against the **system** `libheif.so.1`.
 On Debian/Ubuntu, `gd.so` is loaded before `imagick.so`, so the dynamic linker
-already has `libheif.so.1` mapped. When the new Imagick or ImageMagick asks for
-`libheif.so.1`, the linker reuses the system library — regardless of `rpath` or
-`LD_LIBRARY_PATH`. Depending on versions you get:
+already has `libheif.so.1` mapped and has exported its `heif_*` functions
+globally.
 
-- `undefined symbol: heif_has_compatible_filetype`, or
-- silent use of the old libheif, so iOS 18 files still fail.
-
-This is reproducible on Ubuntu 24.04 with PHP 8.3 + `php8.3-gd`.
-
-The script avoids the collision by giving its private libraries unique SONAMEs
-**before** ImageMagick is built, so every consumer links to the private names
-automatically:
-
-```bash
-patchelf --set-soname libde265-heicfix.so.0   .../libde265.so.0.2.3
-patchelf --replace-needed libde265.so.0 \
-         libde265-heicfix.so.0                .../libheif.so.1.23.7
-patchelf --set-soname libheif-heicfix.so.1    .../libheif.so.1.23.7
-patchelf --replace-needed libheif.so.1 \
-         libheif-heicfix.so.1                 .../bin/heif-dec
-```
-
-The system `libheif.so.1` can then be loaded by GD at the same time as
-`libheif-heicfix.so.1`; they are different libraries with different SONAMEs.
-PHP loads extensions with `RTLD_GLOBAL | RTLD_DEEPBIND` on glibc, so the private
-dependency graph wins over the already-loaded system library. The test suite
-loads `gd.so` (which links the system libheif) and also runs a second
-verification with the system `libheif.so.1` in `LD_PRELOAD`.
+Private SONAMEs alone do not fix that on every PHP build. A SONAME stops the
+linker from reusing the system *object*; it does not rename the exported
+*functions*. On Ubuntu 22.04 with PHP 8.5, a prefix that used only private
+SONAMEs loaded both libheifs and produced this binding trace:
 
 ```text
-libheif-heicfix.so.1     => /opt/heic-ios18-fix/heif/lib/libheif-heicfix.so.1
-libde265-heicfix.so.0    => /opt/heic-ios18-fix/heif/lib/libde265-heicfix.so.0
+libMagickCore-7.Q16HDRI.so.10 → /lib/x86_64-linux-gnu/libheif.so.1  heif_context_alloc
+libMagickCore-7.Q16HDRI.so.10 → /opt/heic-ios18-fix/heif/lib/libheif-heicfix.so.1  heif_context_get_security_limits
+libMagickCore-7.Q16HDRI.so.10 → /lib/x86_64-linux-gnu/libheif.so.1  heif_context_read_from_file
+libMagickCore-7.Q16HDRI.so.10 → /lib/x86_64-linux-gnu/libheif.so.1  heif_context_free
 ```
+
+The private ImageMagick decoded the sample, and Imagick decoded it when loaded
+alone. With GD loaded first, libheif 1.12.0 parsed the file and failed with
+`Too many auxiliary image references`. One function handed a context allocated
+by the other library version, which is unsafe whether or not it happens to
+decode.
+
+`RTLD_DEEPBIND` is not a guarantee here: the trace above comes from a real PHP
+8.5 process that uses it.
+
+### How the build isolates the symbols
+
+`build` compiles a second, position-independent **static** copy of libde265 and
+libheif into `heif-static/`, then links those archives into
+`libMagickCore-7` with:
+
+```text
+-Wl,--exclude-libs,ALL
+-Wl,-Bsymbolic-functions
+```
+
+The `heif_*` and `de265_*` definitions become local to `libMagickCore`, so every
+ImageMagick call binds to the private code regardless of what GD loaded. GD
+keeps its own system `libheif.so.1`; the two implementations coexist in one PHP
+process.
+
+The resulting library has no shared libheif dependency at all:
+
+```text
+$ readelf -d /opt/heic-ios18-fix/imagemagick/lib/libMagickCore-7.Q16HDRI.so.10 | grep -i heif
+$ ldd /opt/heic-ios18-fix/php/8.3/imagick.so | grep -i heif
+```
+
+Both commands print nothing. `check`, `verify` and the pre-flight report
+`libheif linkage=static-hidden` only when that layout is proven.
+
+The shared `heif/` build keeps its private SONAMEs so `heif-dec`, `heif-info`
+and the diagnostic paths keep working next to the system libraries.
 
 ## Realistic pre-flight
 
@@ -126,7 +152,8 @@ site's real FPM `conf.d` (or CLI `conf.d` if FPM is absent), removes stock
 imagick entries, adds the new extension, and runs PHP with that scan directory.
 GD is therefore loaded exactly as it is in production.
 
-`php -n` is deliberately **not** used: it skips GD and hides the SONAME bug.
+`php -n` is deliberately **not** used: it skips GD and hides the symbol-capture
+bug.
 
 The pre-flight must report:
 
@@ -134,6 +161,7 @@ The pre-flight must report:
 - Imagick loaded,
 - `ImageMagick 7`,
 - HEIC listed by `Imagick::queryFormats("HEI*")`,
+- `libheif link : static-hidden`,
 - a successful sample decode when a sample is present.
 
 If any check fails, the extension is not enabled.

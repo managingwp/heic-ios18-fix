@@ -19,7 +19,7 @@ version you choose. The system ImageMagick, libheif, PHP packages and
 
 - [Getting started](getting-started.md) — install, build and enable the fix.
 - [Commands](commands.md) — every subcommand, option and exit code.
-- [How it works](how-it-works.md) — the GD/SONAME trap and the private prefix.
+- [How it works](how-it-works.md) — the GD symbol-capture trap and the private prefix.
 - [Troubleshooting](troubleshooting.md) — common package and verification failures.
 - [Samples](samples.md) — the real iPhone HEIC used to prove decoding.
 
@@ -45,8 +45,9 @@ contains the fix; install `libheif-plugin-libde265` for HEVC decoding. See
 ## What the script does
 
 - Builds **libde265**, **libheif** and **ImageMagick 7** in an isolated prefix.
-- Gives the private libraries unique SONAMEs so PHP GD's system libheif cannot
-  be reused by the new ImageMagick.
+- Links the private libheif and libde265 statically into MagickCore with hidden
+  symbols, so PHP GD's system libheif cannot capture the new ImageMagick's
+  `heif_*` calls.
 - Builds one Imagick extension per PHP ABI, runs a pre-flight with GD loaded,
   then enables it with `phpdismod`/`phpenmod`.
 - Provides **check**, **build**, **php**, **enable**, **rollback**, **verify**,
@@ -67,7 +68,7 @@ and how to replace it with the original BTN photo.
 | --- | --- |
 | [Getting started](getting-started.md) | Requirements, quick start, rollback, uninstall |
 | [Commands](commands.md) | Commands, options, exit codes, quiet output |
-| [How it works](how-it-works.md) | Problem, symptoms, prefix layout, SONAME isolation, pre-flight, needrestart, versions |
+| [How it works](how-it-works.md) | Problem, symptoms, prefix layout, static symbol isolation, pre-flight, needrestart, versions |
 | [GridPane](platforms/gridpane.md) | GridPane-specific runbook and update notes |
 | [RunCloud](platforms/runcloud.md) | Supported build, unimplemented PHP wiring |
 | [Ubuntu 26.04](platforms/ubuntu-26-04.md) | Native fix and HEVC plugin requirement |
