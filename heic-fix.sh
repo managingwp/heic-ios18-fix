@@ -21,7 +21,7 @@ umask 022
 
 SCRIPT_NAME=$(basename -- "${BASH_SOURCE[0]}")
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-SCRIPT_VERSION="1.0.1"
+SCRIPT_VERSION="1.0.2"
 
 PREFIX="/opt/heic-ios18-fix"
 SAMPLE=""
@@ -1567,7 +1567,13 @@ ensure_php_dev() {
     if ! confirm "Install php$ver-dev to build the Imagick extension?"; then
         die "php$ver-dev is required"
     fi
-    apt_run install "php$ver-dev"
+    if ! apt_run install "php$ver-dev"; then
+        error "installing php$ver-dev failed"
+        error "On GridPane/Sury this is often the libpcre2-dev 10.39/10.42 conflict."
+        error "Do not downgrade libpcre2; install the matching Sury pcre2 dev set."
+        error "See docs/troubleshooting.md for the exact commands."
+        die "php$ver-dev is required to build Imagick"
+    fi
     phpize_bin "$ver" >/dev/null || die "phpize$ver still missing after installing php$ver-dev"
 }
 

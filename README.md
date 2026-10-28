@@ -437,6 +437,17 @@ If this build is not a good fit:
 
 ---
 
+## Troubleshooting
+
+* `phpX.Y-dev` fails with `libpcre2-dev` 10.39/10.42 on Sury/GridPane — install
+  the matching Sury PCRE2 development set, do not downgrade.
+* `verify` still reports stock ImageMagick 6 — run
+  `heic-fix.sh php --php X.Y` first; `build` does not create the extension.
+
+Exact commands and checksums: [docs/troubleshooting.md](docs/troubleshooting.md).
+
+---
+
 ## Testing
 
 The repository includes a container test that runs the whole flow on a clean

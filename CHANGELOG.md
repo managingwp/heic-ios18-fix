@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-10-28
+
+### Added
+
+* Troubleshooting guide for the Sury/Ubuntu `libpcre2-dev` 10.39/10.42 conflict
+  that blocks `phpX.Y-dev` on GridPane servers.
+* Clearer `php` failure when `phpX.Y-dev` cannot be installed.
+
 ## [1.0.1] - 2026-10-28
 
 ### Added
@@ -38,5 +46,6 @@ All notable changes to this project are documented here. The format follows
 * Documentation, platform notes, monitoring examples, container test and
   GitHub Actions workflow.
 
+[1.0.2]: https://github.com/managingwp/heic-ios18-fix/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/managingwp/heic-ios18-fix/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/managingwp/heic-ios18-fix/releases/tag/v1.0.0
