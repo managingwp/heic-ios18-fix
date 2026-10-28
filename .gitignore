@@ -5,7 +5,6 @@ Thumbs.db
 *~
 
 # Local builds and logs
-src/
 dist/
 *.log
 *.tmp
