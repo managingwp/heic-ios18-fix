@@ -1,7 +1,7 @@
 # 20261028-fix-gd-libheif-symbol-collision
 
 **Version:** 5
-**Status:** Not Started
+**Status:** 🚧 In Progress
 **Type:** fix
 
 ## Plan Contract
@@ -139,15 +139,30 @@ private libheif in `imagick.so`'s `ldd` output.
 
 #### Tasks
 
-- [ ] Run shellcheck, whitespace validation, and sample checksum validation.
-- [ ] Run the full container suite for Ubuntu 22.04/PHP 8.3, Ubuntu 22.04/PHP 8.5, and Ubuntu 24.04/PHP 8.3. Never substitute the generated fixture for the repository sample in the collision assertion.
-- [ ] In every container, retain concise proof: local hidden `heif_*`, no MagickCore shared-libheif dependency, no MagickCore-to-system `heif_*` binding, and GD-to-system binding where GD has HEIF support.
-- [ ] Run `build` twice to prove idempotency. In a disposable prefix, seed old revision metadata and prove one run migrates it to static-hidden linkage instead of skipping ImageMagick.
-- [ ] Exercise `php`, `verify`, `rollback`, and `enable`; require GD-first decode after initial enablement and re-enable, and confirm rollback does not delete the private prefix.
-- [ ] Build Docusaurus, audit offline links, and confirm all GitHub Actions jobs are green.
+- [x] Run shellcheck, whitespace validation, and sample checksum validation.
+- [x] Run the full container suite for Ubuntu 22.04/PHP 8.3, Ubuntu 22.04/PHP 8.5, and Ubuntu 24.04/PHP 8.3. Never substitute the generated fixture for the repository sample in the collision assertion.
+- [x] In every container, retain concise proof: local hidden `heif_*`, no MagickCore shared-libheif dependency, no MagickCore-to-system `heif_*` binding, and GD-to-system binding where GD has HEIF support.
+- [x] Run `build` twice to prove idempotency. In a disposable prefix, seed old revision metadata and prove one run migrates it to static-hidden linkage instead of skipping ImageMagick.
+- [x] Exercise `php`, `verify`, `rollback`, and `enable`; require GD-first decode after initial enablement and re-enable, and confirm rollback does not delete the private prefix.
+- [x] Build Docusaurus, audit offline links, and confirm all GitHub Actions jobs are green.
 - [ ] **USER-ONLY / PRODUCTION — DO NOT EXECUTE AUTOMATICALLY:** After CI passes, give the user a copy/paste runbook that snapshots `/opt/heic-ios18-fix/installed-versions.txt`, rebuilds the existing private prefix, runs `php --php 8.5` and `verify --php 8.5` with the repository sample, checks CLI/FPM and GD-first decode, and includes `rollback --php 8.5`. Flag that `php`/`enable` change PHP configuration and may reload PHP-FPM.
 - [ ] **Outstanding user gate:** Wait for the affected server's successful pre-flight, verification, and FPM output. Do not close this PGF or claim production validation before the user supplies it.
 - [ ] **Validation:** Every automated command below passes, CI is green, and the user confirms the manual server gate; otherwise record failed/skipped tests in the PGF test ledger and keep production validation outstanding.
+
+**Automated verification evidence:**
+
+```text
+Ubuntu 22.04 / PHP 8.5 : All container tests passed (PHP 8.5)
+Ubuntu 22.04 / PHP 8.3 : All container tests passed (PHP 8.3)
+Ubuntu 24.04 / PHP 8.3 : All container tests passed (PHP 8.3)
+
+Migration run:
+  build 1 -> libheif link : static-hidden
+  remove IMAGEMAGICK_LINKAGE_REV
+  build 2 -> "ImageMagick <ver> needs a rebuild: libheif must be linked statically into MagickCore"
+  revision recorded again; build 3 -> "ImageMagick <ver> already built; skipping"
+  MIGRATION-OK
+```
 
 #### How to Test
 
@@ -191,3 +206,47 @@ Expected:
 - The PGF stays open until the user supplies successful output from the separately generated production runbook.
 
 **Commit:** `test: verify GD-safe libheif isolation`
+
+### Production runbook (user only)
+
+The affected server is `slimpodmembers01-wpfueledhost-com` (Ubuntu 22.04,
+PHP 8.5). Run these commands yourself; `build` changes the prefix and `php`
+changes PHP configuration and may reload PHP-FPM.
+
+```bash
+cd ~/heic-ios18-fix
+git pull --ff-only
+
+# Snapshot the current state
+sudo cp /opt/heic-ios18-fix/installed-versions.txt \
+    /root/heic-ios18-fix-versions-$(date +%F-%H%M).txt
+sudo ./heic-fix.sh status --php 8.5 | tee /root/heic-status-before.txt
+
+# 1. Relink MagickCore (expect: libheif link : static-hidden)
+sudo ./heic-fix.sh build -y --sample samples/failure_magick.HEIC
+sudo ./heic-fix.sh status | grep -E 'libheif|libMagickCore'
+
+# 2. Build Imagick, GD-loaded pre-flight, enable, reload FPM
+sudo ./heic-fix.sh php --php 8.5 -y --sample samples/failure_magick.HEIC
+
+# 3. Verify CLI, FPM and the GD-first path
+sudo ./heic-fix.sh verify --php 8.5 --sample samples/failure_magick.HEIC
+sudo ./heic-fix.sh check -q --php 8.5
+
+# 4. Direct production-order proof
+sudo php8.5 -n -d extension=gd.so \
+    -d extension=/opt/heic-ios18-fix/php/8.5/imagick.so \
+    -r '$im = new Imagick($argv[1]); $im->setImageFormat("jpeg");
+        printf("ok %d bytes\n", strlen($im->getImageBlob()));' \
+    samples/failure_magick.HEIC
+
+# Rollback if any step fails
+sudo ./heic-fix.sh rollback --php 8.5 -y
+```
+
+Expected: `check -q` prints `status=ok ... libheif=1.23.7
+linkage=static-hidden decode=ok`, `verify` prints `Verify PASSED`, and the
+direct probe prints `ok <bytes>`.
+
+**Outstanding gate:** the two user-only tasks above stay unchecked until the
+server output is supplied. The PGF is not closed before that.
