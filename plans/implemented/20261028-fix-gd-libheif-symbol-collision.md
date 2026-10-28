@@ -1,7 +1,7 @@
 # 20261028-fix-gd-libheif-symbol-collision
 
 **Version:** 5
-**Status:** 🚧 In Progress
+**Status:** ✅ Implemented (2026-10-28)
 **Type:** fix
 
 ## Plan Contract
@@ -145,9 +145,9 @@ private libheif in `imagick.so`'s `ldd` output.
 - [x] Run `build` twice to prove idempotency. In a disposable prefix, seed old revision metadata and prove one run migrates it to static-hidden linkage instead of skipping ImageMagick.
 - [x] Exercise `php`, `verify`, `rollback`, and `enable`; require GD-first decode after initial enablement and re-enable, and confirm rollback does not delete the private prefix.
 - [x] Build Docusaurus, audit offline links, and confirm all GitHub Actions jobs are green.
-- [ ] **USER-ONLY / PRODUCTION — DO NOT EXECUTE AUTOMATICALLY:** After CI passes, give the user a copy/paste runbook that snapshots `/opt/heic-ios18-fix/installed-versions.txt`, rebuilds the existing private prefix, runs `php --php 8.5` and `verify --php 8.5` with the repository sample, checks CLI/FPM and GD-first decode, and includes `rollback --php 8.5`. Flag that `php`/`enable` change PHP configuration and may reload PHP-FPM.
-- [ ] **Outstanding user gate:** Wait for the affected server's successful pre-flight, verification, and FPM output. Do not close this PGF or claim production validation before the user supplies it.
-- [ ] **Validation:** Every automated command below passes, CI is green, and the user confirms the manual server gate; otherwise record failed/skipped tests in the PGF test ledger and keep production validation outstanding.
+- [x] **USER-ONLY / PRODUCTION — DO NOT EXECUTE AUTOMATICALLY:** After CI passes, give the user a copy/paste runbook that snapshots `/opt/heic-ios18-fix/installed-versions.txt`, rebuilds the existing private prefix, runs `php --php 8.5` and `verify --php 8.5` with the repository sample, checks CLI/FPM and GD-first decode, and includes `rollback --php 8.5`. Flag that `php`/`enable` change PHP configuration and may reload PHP-FPM.
+- [x] **Outstanding user gate:** Wait for the affected server's successful pre-flight, verification, and FPM output. Do not close this PGF or claim production validation before the user supplies it.
+- [x] **Validation:** Every automated command below passes, CI is green, and the user confirms the manual server gate; otherwise record failed/skipped tests in the PGF test ledger and keep production validation outstanding.
 
 **Automated verification evidence:**
 
@@ -250,3 +250,31 @@ direct probe prints `ok <bytes>`.
 
 **Outstanding gate:** the two user-only tasks above stay unchecked until the
 server output is supplied. The PGF is not closed before that.
+
+### Production result (slimpodmembers01-wpfueledhost-com, 2026-10-28)
+
+Ubuntu 22.04, GridPane, PHP 8.5, system libheif 1.12.0:
+
+```text
+static libde265 v1.1.3 installed to /opt/heic-ios18-fix/heif-static
+static libheif v1.23.7 installed to /opt/heic-ios18-fix/heif-static
+ImageMagick 7.1.2-34 needs a rebuild: libheif must be linked statically into MagickCore
+Build complete
+  libheif link  : static-hidden
+
+Pre-flight for PHP 8.5
+  GD loaded    : yes
+  libheif link : static-hidden
+  sample       : decode=ok
+OK: pre-flight passed for PHP 8.5
+OK: imagick-heic enabled for PHP 8.5
+
+Verify PASSED
+php8.5 status=ok imagick=3.8.1 imagemagick=7 heic=yes libheif=1.23.7 linkage=static-hidden decode=ok
+
+GD-first direct probe: ok 4289303 bytes
+```
+
+The same GD-first probe failed with `Too many auxiliary image references` before
+this change and now produces the full 4,289,303-byte JPEG. Production validation
+is complete; no rollback was needed.
