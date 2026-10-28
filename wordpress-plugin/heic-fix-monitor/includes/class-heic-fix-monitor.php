@@ -43,6 +43,7 @@ final class Heic_Fix_Monitor {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 
 		Heic_Fix_Monitor_Settings::instance()->init();
+		Heic_Fix_Monitor_Notification_Manager::init();
 	}
 
 	/**

@@ -96,6 +96,12 @@ echo "|", ( strpos( $plain, "secret-canary" ) === false ? "no-plaintext" : "plai
 ')
 assert_eq "$secret_roundtrip" "roundtrip|no-plaintext" "secrets round-trip through encryption without plaintext storage"
 
+notify_output=$(wp_cli eval-file /var/www/html/wp-content/plugins/$PLUGIN/tests/notification-tests.php 2>&1) || true
+printf '%s\n' "$notify_output"
+if printf '%s\n' "$notify_output" | grep -q '^FAIL:'; then
+	fail "notification tests"
+fi
+
 wp_cli plugin deactivate "$PLUGIN"
 wp_cli plugin activate "$PLUGIN"
 assert_eq "$(wp_cli plugin is-active "$PLUGIN" && echo active)" "active" "deactivation and reactivation leave the plugin active"
