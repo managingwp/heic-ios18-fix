@@ -81,15 +81,15 @@ Defaults are executable; change only if a different audience or release policy i
 
 #### Tasks
 
-- [ ] Add `src/lib/pluginReleases.mjs` with strict tag parsing, semantic-version comparison, draft/prerelease filtering, required-asset filtering, paginated GitHub release collection, and a `selectLatestPluginRelease()` function.
-- [ ] Add `src/pages/plugin-download.jsx` using the Docusaurus `Layout`; show loading, no-release, and API-error states with a direct GitHub Releases fallback link. Never present an unverified release as installable.
-- [ ] Render the selected version, publication date, ZIP link, checksum link, and release-notes link. Include the install steps and the warning that this is not an automatic WordPress update.
-- [ ] Add `tests/plugin-releases.test.mjs` using `node:test` for pagination, installer-only releases, missing assets, drafts, prereleases, malformed tags, numeric ordering including `0.1.10 > 0.1.9`, and API failure.
-- [ ] Add a `test:plugin-releases` script to `package.json`; do not change the package version.
-- [ ] Link `/plugin-download/` from the navbar or footer, `README.md`, `docs/monitoring.md`, and the plugin configuration page using the published Pages URL.
-- [ ] **Validation:** `node --test tests/plugin-releases.test.mjs` exits 0; `npm run build` exits 0; `docker run --rm -v "$PWD:/input" lycheeverse/lychee:latest --offline --no-progress /input/README.md /input/docs` reports zero errors; the built page contains the `/plugin-download/` route.
+- [x] Add `src/lib/pluginReleases.mjs` with strict tag parsing, semantic-version comparison, draft/prerelease filtering, required-asset filtering, paginated GitHub release collection, and a `selectLatestPluginRelease()` function.
+- [x] Add `src/pages/plugin-download.jsx` using the Docusaurus `Layout`; show loading, no-release, and API-error states with a direct GitHub Releases fallback link. Never present an unverified release as installable.
+- [x] Render the selected version, publication date, ZIP link, checksum link, and release-notes link. Include the install steps and the warning that this is not an automatic WordPress update.
+- [x] Add `tests/plugin-releases.test.mjs` using `node:test` for pagination, installer-only releases, missing assets, drafts, prereleases, malformed tags, numeric ordering including `0.1.10 > 0.1.9`, and API failure.
+- [x] Add a `test:plugin-releases` script to `package.json`; do not change the package version.
+- [x] Link `/plugin-download/` from the navbar or footer, `README.md`, `docs/monitoring.md`, and the plugin configuration page using the published Pages URL.
+- [x] **Validation:** `node --test tests/plugin-releases.test.mjs` exits 0; `npm run build` exits 0; `docker run --rm -v "$PWD:/input" lycheeverse/lychee:latest --offline --no-progress /input/README.md /input/docs` reports zero errors; the built page contains the `/plugin-download/` route.
 
-**Commit:** `docs: add public plugin download page`
+**Commit:** `fabf67d` — `docs: add public plugin download page`
 
 ### Phase 4: Testing & Verification
 
