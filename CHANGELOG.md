@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-10-28
+
+### Added
+
+* Ubuntu 26.04 documentation: libheif 1.21.2 already contains the iOS 18 fix,
+  but HEVC decoding needs `libheif-plugin-libde265`.
+* `check` and `verify` now recognise the missing HEVC plugin on libheif
+  ≥ 1.18.2 and print the apt package instead of implying a rebuild is needed.
+* `docs/platforms/ubuntu-26.04.md` and an Ubuntu 26.04 row in the README
+  distro table.
+
 ## [1.0.0] - 2026-10-27
 
 ### Added
@@ -27,4 +38,5 @@ All notable changes to this project are documented here. The format follows
 * Documentation, platform notes, monitoring examples, container test and
   GitHub Actions workflow.
 
+[1.0.1]: https://github.com/managingwp/heic-ios18-fix/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/managingwp/heic-ios18-fix/releases/tag/v1.0.0

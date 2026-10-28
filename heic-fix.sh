@@ -21,7 +21,7 @@ umask 022
 
 SCRIPT_NAME=$(basename -- "${BASH_SOURCE[0]}")
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.0.1"
 
 PREFIX="/opt/heic-ios18-fix"
 SAMPLE=""
@@ -59,6 +59,7 @@ TMPDIR_PREFIX=""
 PROBE_OUT=""
 PROBE_ERR_FILE=""
 CHECK_RESULT="error"
+CHECK_PLUGIN_HINT=0
 
 # ---------------------------------------------------------------------------
 # Output helpers
@@ -745,13 +746,21 @@ cleanup_probe() {
     PROBE_ERR_FILE=""
 }
 
+# libheif >= 1.18 fixes the iOS 18 tmap bug, but newer Ubuntu releases ship
+# HEVC decoding as a separately suggested plugin. Recognise that failure so
+# check/verify can point at apt instead of a rebuild.
+is_missing_hevc_plugin() {
+    local message=$1
+    [[ $message == *"No decoding plugin installed"* || $message == *"Unsupported codec"* ]]
+}
+
 imagemagick_major() {
     local v=$1
     sed -n 's/^ImageMagick \([0-9][0-9]*\).*/\1/p' <<<"$v" | head -n 1
 }
 
 libheif_path_for_ext() {
-    local ext=$1 im_major=$2
+    local ext=$1
     local lib
     lib=$(ldd "$ext" 2>/dev/null | awk '/libheif/ && $3 != "not" { print $3; exit }')
     if [[ -n $lib ]]; then
@@ -759,30 +768,33 @@ libheif_path_for_ext() {
         return 0
     fi
 
-    if [[ $im_major == "6" ]]; then
-        local mods="" core="" coder=""
-        if have convert; then
-            mods=$(convert -list configure 2>/dev/null | awk '$1 == "MODULES_PATH" { print $2; exit }')
+    # ImageMagick 6 and 7 can build coders as modules. In that case imagick.so
+    # links MagickCore, not libheif, and the HEIC coder module does the link.
+    local mods="" core="" coder="" tool
+    for tool in magick convert; do
+        if have "$tool"; then
+            mods=$("$tool" -list configure 2>/dev/null \
+                | awk '$1 == "CODER_PATH" || $1 == "MODULES_PATH" { print $2; exit }')
+            [[ -n $mods ]] && break
         fi
-        if [[ -z $mods ]]; then
-            core=$(ldd "$ext" 2>/dev/null | awk '/libMagickCore/ { print $3; exit }')
-            if [[ -n $core ]]; then
-                core=$(readlink -f "$core" 2>/dev/null || printf '%s' "$core")
-                mods=$(dirname -- "$core")
-            fi
+    done
+    if [[ -z $mods ]]; then
+        core=$(ldd "$ext" 2>/dev/null | awk '/libMagickCore/ { print $3; exit }')
+        if [[ -n $core ]]; then
+            core=$(readlink -f "$core" 2>/dev/null || printf '%s' "$core")
+            mods=$(dirname -- "$core")
         fi
-        if [[ -n $mods ]]; then
-            # Debian/Ubuntu: <libdir>/ImageMagick-6*/modules-Q16/coders/heic.so
-            coder=$(find "$mods" -maxdepth 5 -type f -path '*/coders/heic.so' 2>/dev/null | head -n 1)
-            if [[ -z $coder && -f "$mods/coders/heic.so" ]]; then
-                coder="$mods/coders/heic.so"
-            fi
-            if [[ -n $coder ]]; then
-                lib=$(ldd "$coder" 2>/dev/null | awk '/libheif/ && $3 != "not" { print $3; exit }')
-                if [[ -n $lib ]]; then
-                    printf '%s\n' "$lib"
-                    return 0
-                fi
+    fi
+    if [[ -n $mods ]]; then
+        coder=$(find "$mods" -maxdepth 5 -type f -path '*/coders/heic.so' 2>/dev/null | head -n 1)
+        if [[ -z $coder && -f "$mods/coders/heic.so" ]]; then
+            coder="$mods/coders/heic.so"
+        fi
+        if [[ -n $coder ]]; then
+            lib=$(ldd "$coder" 2>/dev/null | awk '/libheif/ && $3 != "not" { print $3; exit }')
+            if [[ -n $lib ]]; then
+                printf '%s\n' "$lib"
+                return 0
             fi
         fi
     fi
@@ -866,7 +878,7 @@ check_php_version() {
     formats=$(probe_value heic_formats)
 
     local libheif="" libheif_ver="unknown"
-    if libheif=$(libheif_path_for_ext "$ext" "${im_major:-?}"); then
+    if libheif=$(libheif_path_for_ext "$ext"); then
         if libheif_ver=$(libheif_version_for_path "$libheif"); then
             :
         else
@@ -893,7 +905,7 @@ check_php_version() {
         decode="missing"
     fi
 
-    local status="ok" reasons=()
+    local status="ok" reasons=() reason_text="" r
     if [[ -z $formats || $formats == "-" ]]; then
         status="affected"
         reasons+=("ImageMagick build has no HEIC coder")
@@ -913,6 +925,15 @@ check_php_version() {
     if [[ $decode == "fail" ]]; then
         status="affected"
         reasons+=("sample decode failed")
+    fi
+
+    local plugin_hint=0
+    if [[ $decode == "fail" ]] && is_missing_hevc_plugin "$decode_err"; then
+        if [[ $libheif_ver == "unknown" ]] || version_ge "$libheif_ver" "$MIN_LIBHEIF"; then
+            plugin_hint=1
+            CHECK_PLUGIN_HINT=1
+            reasons+=("libheif is new enough; the HEVC decoder plugin is missing")
+        fi
     fi
 
     local heic_yes="no"
@@ -944,12 +965,19 @@ check_php_version() {
         *) printf ' decode=%s' "$decode" ;;
     esac
     printf '\n'
+    if (( plugin_hint )); then
+        printf '    hint         : apt install libheif-plugin-libde265, then reload php%s-fpm\n' "$ver"
+        printf '                   libheif %s is already new enough; no rebuild is needed\n' "$libheif_ver"
+    fi
     if [[ $status == "ok" ]]; then
         printf '    status       : %sOK%s\n' "$C_GREEN" "$C_RESET"
     else
         printf '    status       : %sAFFECTED%s' "$C_RED" "$C_RESET"
         if (( ${#reasons[@]} )); then
-            printf ' - %s' "$(IFS='; '; printf '%s' "${reasons[*]}")"
+            for r in "${reasons[@]}"; do
+                reason_text+="${reason_text:+; }$r"
+            done
+            printf ' - %s' "$reason_text"
         fi
         printf '\n'
     fi
@@ -989,11 +1017,15 @@ cmd_check() {
     fi
 
     local ver rc
-    local any_affected=0 any_error=0 any_imagick=0
+    local any_affected=0 any_error=0 any_imagick=0 any_plugin_hint=0
     for ver in "${targets[@]}"; do
         rc=0
         CHECK_RESULT="error"
+        CHECK_PLUGIN_HINT=0
         check_php_version "$ver" "$sample" "$state" || rc=$?
+        if (( CHECK_PLUGIN_HINT )); then
+            any_plugin_hint=1
+        fi
         case $CHECK_RESULT in
             ok|affected) any_imagick=1 ;;
             no-imagick) : ;;
@@ -1023,7 +1055,11 @@ cmd_check() {
         return 2
     fi
     if (( any_affected )); then
-        (( QUIET )) || printf '%sResult: AFFECTED%s (run build, then: %s php --php X.Y)\n' "$C_RED" "$C_RESET" "$SCRIPT_NAME"
+        if (( any_plugin_hint )); then
+            (( QUIET )) || printf '%sResult: AFFECTED%s (install libheif-plugin-libde265; no rebuild needed)\n' "$C_RED" "$C_RESET"
+        else
+            (( QUIET )) || printf '%sResult: AFFECTED%s (run build, then: %s php --php X.Y)\n' "$C_RED" "$C_RESET" "$SCRIPT_NAME"
+        fi
         return 1
     fi
     if (( ! any_imagick )); then
@@ -1965,13 +2001,14 @@ verify_cli() {
     local rc=$PROBE_RC err
     err=$(cat "$PROBE_ERR_FILE" 2>/dev/null || true)
 
-    local imagick imver ext formats decode dims
+    local imagick imver ext formats decode dims decode_err
     imagick=$(probe_value imagick)
     imver=$(probe_value imagemagick)
     ext=$(probe_value ext_file)
     formats=$(probe_value heic_formats)
     decode=$(probe_value decode)
     dims=$(probe_value dimensions)
+    decode_err=$(probe_value decode_error)
     cleanup_probe
 
     local failed=0
@@ -1991,6 +2028,10 @@ verify_cli() {
             printf '    sample      : decode=ok (%s)\n' "$dims"
         else
             printf '    sample      : %sFAIL%s decode=%s\n' "$C_RED" "$C_RESET" "${decode:-unknown}"
+            if is_missing_hevc_plugin "$decode_err"; then
+                printf '    hint        : apt install libheif-plugin-libde265, then reload php%s-fpm\n' "$ver"
+                printf '                  the system libheif is new enough; no rebuild is needed\n'
+            fi
             failed=1
         fi
     else

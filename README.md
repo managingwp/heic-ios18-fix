@@ -10,8 +10,9 @@ version you choose. Your system ImageMagick, libheif, PHP packages and
 `/usr/lib` stay exactly as the distro shipped them.
 
 * License: MIT
-* Tested in containers: Ubuntu 22.04 and 24.04, PHP 8.3 (ondrej PPA), with
-  `php-gd` loaded
+* Tested in containers: Ubuntu 22.04/24.04 (PHP 8.3, workaround) and
+  Ubuntu 26.04 (PHP 8.5, native plugin path), with `php-gd` loaded where
+  applicable
 * Verified decoder: libheif **v1.23.7** (iPhone 15 Pro Max / iOS 18.0 sample)
 * Minimum accepted libheif: **1.18.2**
 
@@ -29,8 +30,36 @@ server shares the same system ImageMagick and libheif.
 | --- | --- | --- |
 | Ubuntu 22.04 | 1.12.0 | fails |
 | Ubuntu 24.04 | 1.17.6 | fails |
+| Ubuntu 26.04 | 1.21.2 | iOS 18 bug fixed; install the HEVC decoder plugin |
 | Debian 12 | 1.15.1 | fails |
 | Any build with libheif ≥ 1.18.2 | ≥ 1.18.2 | works |
+
+### Ubuntu 26.04 and newer
+
+Ubuntu 26.04 ships **libheif 1.21.2** and **ImageMagick 7.1.2.18**, so the iOS 18
+`tmap` bug is fixed natively. **Do not build this prefix on 26.04.**
+
+There is one separate catch: libheif 1.21 moves HEVC decoding into a plugin, and
+`libheif1` only *Suggests* it. A stock `imagemagick`/`php-imagick` install can
+therefore still fail decode with:
+
+```text
+ImagickException: Error while loading plugin:
+No decoding plugin installed for this compression format
+```
+
+That is not the iOS 18 metadata failure. Fix it with one package:
+
+```bash
+sudo apt install libheif-plugin-libde265
+sudo systemctl reload php8.5-fpm   # use the PHP version your sites run
+```
+
+Install `libheif-plugin-x265` only if you also need to **encode** HEIC.
+
+`check` recognises this pattern when libheif is already ≥ 1.18.2 and prints the
+plugin hint instead of recommending a rebuild. Full details:
+[docs/platforms/ubuntu-26.04.md](docs/platforms/ubuntu-26.04.md).
 
 ### Symptoms
 
@@ -301,6 +330,12 @@ does not implement the iOS 18 `tmap` handling.
 | GridPane | `/usr/local/bin/gp` or `/opt/gridpane` | yes | same as generic, with update warnings |
 | RunCloud | `/RunCloud` | yes | **not implemented** — `TODO(runcloud)` |
 
+### Ubuntu 26.04 and newer
+
+No build is needed. libheif 1.21.2 already contains the iOS 18 fix; install
+`libheif-plugin-libde265` for the HEVC decoder. See
+[docs/platforms/ubuntu-26.04.md](docs/platforms/ubuntu-26.04.md).
+
 ### GridPane
 
 GridPane is detected automatically. The code path is the same as generic
@@ -423,6 +458,10 @@ check (AFFECTED) → build → build again (idempotent) → php → verify
 It asserts that `ldd` resolves both private SONAMEs inside the prefix and that
 GD is loaded. GitHub Actions runs shellcheck plus the same test on Ubuntu 22.04
 and 24.04.
+
+Ubuntu 26.04 takes the native path instead; it is documented in
+[docs/platforms/ubuntu-26.04.md](docs/platforms/ubuntu-26.04.md) and was
+validated there without building anything.
 
 `shellcheck -x heic-fix.sh tests/*.sh` must be clean.
 
