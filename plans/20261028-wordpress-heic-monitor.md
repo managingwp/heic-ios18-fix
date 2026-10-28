@@ -128,16 +128,16 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 
 #### Tasks
 
-- [ ] Add `includes/notifications/interface-heic-fix-monitor-notifier.php`, `class-heic-fix-monitor-notification-manager.php`, and `class-heic-fix-monitor-message-builder.php`; build plain text/minimal HTML containing event/state, changed reason codes, per-signal bounded evidence, last-good time, `wp_parse_url( home_url(), PHP_URL_HOST )`, PHP version, and `https://managingwp.github.io/heic-ios18-fix/troubleshooting/`.
-- [ ] Add `class-heic-fix-monitor-email-notifier.php` using `wp_mail()` with validated site recipients, fixed translated subject prefixes, no arbitrary headers, and redaction before send.
-- [ ] Add `class-heic-fix-monitor-slack-notifier.php` with minimal Block Kit/plain text JSON, `hooks.slack.com` enforcement, and no webhook URL/token in payloads, results, or errors.
-- [ ] Add `class-heic-fix-monitor-webhook-notifier.php` using `wp_safe_remote_post()` and the confirmed outbound policy; put the optional token only in an `Authorization: Bearer` header, never in URLs/bodies/logs, and send a versioned JSON payload with no raw process output.
-- [ ] Add a shared URL/IP validator that lowercases/punycodes hosts, validates HTTPS/default port/no userinfo, checks the configured host allowlist, resolves A/AAAA immediately before each attempt, rejects non-public ranges, sets redirects to zero by default, and revalidates any explicitly allowed redirect.
-- [ ] Add bounded retry scheduling with attempt count and opaque event ID only; exponential delays must not place secrets/event payloads in cron arguments, and delivery results retain channel/status/HTTP class only.
-- [ ] Add WordPress privacy-policy suggestion text describing configured recipients and opt-in external channels; store no visitor data or IP addresses and define state/delivery retention and uninstall cleanup.
-- [ ] **Validation:** `pre_http_request`-mocked tests assert email, Slack, and generic payload shapes; public-host validation passes; HTTP/private/loopback/link-local/userinfo/unallowlisted hosts fail; retries stop at the bound; a secret-canary scan finds no secret in HTML, state, fingerprints, payload bodies, errors, or logs.
+- [x] Add `includes/notifications/interface-heic-fix-monitor-notifier.php`, `class-heic-fix-monitor-notification-manager.php`, and `class-heic-fix-monitor-message-builder.php`; build plain text/minimal HTML containing event/state, changed reason codes, per-signal bounded evidence, last-good time, `wp_parse_url( home_url(), PHP_URL_HOST )`, PHP version, and `https://managingwp.github.io/heic-ios18-fix/troubleshooting/`.
+- [x] Add `class-heic-fix-monitor-email-notifier.php` using `wp_mail()` with validated site recipients, fixed translated subject prefixes, no arbitrary headers, and redaction before send.
+- [x] Add `class-heic-fix-monitor-slack-notifier.php` with minimal Block Kit/plain text JSON, `hooks.slack.com` enforcement, and no webhook URL/token in payloads, results, or errors.
+- [x] Add `class-heic-fix-monitor-webhook-notifier.php` using `wp_safe_remote_post()` and the confirmed outbound policy; put the optional token only in an `Authorization: Bearer` header, never in URLs/bodies/logs, and send a versioned JSON payload with no raw process output.
+- [x] Add a shared URL/IP validator that lowercases/punycodes hosts, validates HTTPS/default port/no userinfo, checks the configured host allowlist, resolves A/AAAA immediately before each attempt, rejects non-public ranges, sets redirects to zero by default, and revalidates any explicitly allowed redirect.
+- [x] Add bounded retry scheduling with attempt count and opaque event ID only; exponential delays must not place secrets/event payloads in cron arguments, and delivery results retain channel/status/HTTP class only.
+- [x] Add WordPress privacy-policy suggestion text describing configured recipients and opt-in external channels; store no visitor data or IP addresses and define state/delivery retention and uninstall cleanup.
+- [x] **Validation:** `pre_http_request`-mocked tests assert email, Slack, and generic payload shapes; public-host validation passes; HTTP/private/loopback/link-local/userinfo/unallowlisted hosts fail; retries stop at the bound; a secret-canary scan finds no secret in HTML, state, fingerprints, payload bodies, errors, or logs.
 
-**Commit:** `feat: notify on HEIC regressions`
+**Commit:** `3a8957e` — `feat: notify on HEIC regressions`
 
 ### Phase 6: Build the admin status and manual actions
 
