@@ -161,16 +161,16 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 
 #### Tasks
 
-- [ ] Add `includes/class-heic-fix-monitor-cron.php`; register allowlisted intervals, guard duplicate scheduling with `wp_next_scheduled()`, implement a tokenized transient lock with stale timeout, enforce max runtime/decode interval, run without `current_user_can()`, and schedule digest in the site's timezone.
-- [ ] Store no secrets or payloads in cron args. Retry events contain only site ID, opaque event ID, channel key, and attempt; callbacks re-read sanitized settings/secrets and validate the stored context before delivery.
-- [ ] Add `includes/class-heic-fix-monitor-cli-command.php` and register `wp heic-monitor check` only when `WP_CLI`; support `--format=table|json`, `--notify`, and `--force-decode` as strict allowlists, sanitize all args, emit no secrets, return exit 0/1/2/3 for `ok|affected-or-missing|error|degraded`, and document that it is read-only and needs no WordPress user context.
-- [ ] Make `--notify` explicit and default off for interactive checks; use `WP_CLI::log/success/error`, never `echo`, and ensure JSON output contains normalized evidence only.
-- [ ] Implement site-scoped network activation by iterating existing sites in bounded batches with `switch_to_blog()`/`restore_current_blog()`, provision new sites on `wp_initialize_site`, and remove per-site hooks/options on network uninstall. Never trust a blog ID from requests.
-- [ ] Add `uninstall.php` with `WP_UNINSTALL_PLUGIN` guard; clear check/digest/retry events, options, and transients on each provisioned site, including network uninstall, without custom SQL or touching host files.
-- [ ] Document a real system cron invoking `wp heic-monitor check --notify` and link to `docs/monitoring.md` for server-level alternatives; state that WP-Cron depends on traffic.
-- [ ] **Validation:** disposable single-site and multisite tests prove one schedule per site, no overlap, new-site provisioning, site isolation, CLI exit/JSON contracts, deactivation unscheduling, and uninstall removal with the configured prefix/sample unchanged byte-for-byte.
+- [x] Add `includes/class-heic-fix-monitor-cron.php`; register allowlisted intervals, guard duplicate scheduling with `wp_next_scheduled()`, implement a tokenized transient lock with stale timeout, enforce max runtime/decode interval, run without `current_user_can()`, and schedule digest in the site's timezone.
+- [x] Store no secrets or payloads in cron args. Retry events contain only site ID, opaque event ID, channel key, and attempt; callbacks re-read sanitized settings/secrets and validate the stored context before delivery.
+- [x] Add `includes/class-heic-fix-monitor-cli-command.php` and register `wp heic-monitor check` only when `WP_CLI`; support `--format=table|json`, `--notify`, and `--force-decode` as strict allowlists, sanitize all args, emit no secrets, return exit 0/1/2/3 for `ok|affected-or-missing|error|degraded`, and document that it is read-only and needs no WordPress user context.
+- [x] Make `--notify` explicit and default off for interactive checks; use `WP_CLI::log/success/error`, never `echo`, and ensure JSON output contains normalized evidence only.
+- [x] Implement site-scoped network activation by iterating existing sites in bounded batches with `switch_to_blog()`/`restore_current_blog()`, provision new sites on `wp_initialize_site`, and remove per-site hooks/options on network uninstall. Never trust a blog ID from requests.
+- [x] Add `uninstall.php` with `WP_UNINSTALL_PLUGIN` guard; clear check/digest/retry events, options, and transients on each provisioned site, including network uninstall, without custom SQL or touching host files.
+- [x] Document a real system cron invoking `wp heic-monitor check --notify` and link to `docs/monitoring.md` for server-level alternatives; state that WP-Cron depends on traffic.
+- [x] **Validation:** disposable single-site and multisite tests prove one schedule per site, no overlap, new-site provisioning, site isolation, CLI exit/JSON contracts, deactivation unscheduling, and uninstall removal with the configured prefix/sample unchanged byte-for-byte.
 
-**Commit:** `feat: schedule site-scoped HEIC monitoring`
+**Commit:** `9553a20` — `feat: schedule site-scoped HEIC monitoring`
 
 ### Phase 8: Document, package, and integrate CI
 
