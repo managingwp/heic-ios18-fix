@@ -1,7 +1,7 @@
 # 20261028-docs-local-search
 
 **Version:** 5
-**Status:** Not Started
+**Status:** ✅ Implemented (2026-10-28)
 **Type:** feature
 
 ## Plan Contract
@@ -34,13 +34,13 @@
 **Goal:** Add the local search dependency and a `themes` block so a build produces an index.
 
 #### Tasks
-- [ ] Install pinned: `npm install --save-exact @easyops-cn/docusaurus-search-local@0.55.3`.
-- [ ] Add a top-level `themes` key to `docusaurus.config.js` between the `presets` block (ends line 50) and `themeConfig` (line 52):
+- [x] Install pinned: `npm install --save-exact @easyops-cn/docusaurus-search-local@0.55.3`.
+- [x] Add a top-level `themes` key to `docusaurus.config.js` between the `presets` block (ends line 50) and `themeConfig` (line 52):
       `[['@easyops-cn/docusaurus-search-local', { hashed: true, indexBlog: false, language: ['en'], docsRouteBasePath: '/' }]]`
-- [ ] Keep the plain module string, not `require.resolve` — the config is written with ESM `import`.
-- [ ] Add no `algolia` key: local search and DocSearch are alternatives, and configuring both is ambiguous.
-- [ ] Commit `package.json`, `package-lock.json`, and `docusaurus.config.js` together so `npm ci` resolves the same tree.
-- [ ] **Validation:** all four commands exit 0.
+- [x] Keep the plain module string, not `require.resolve` — the config is written with ESM `import`.
+- [x] Add no `algolia` key: local search and DocSearch are alternatives, and configuring both is ambiguous.
+- [x] Commit `package.json`, `package-lock.json`, and `docusaurus.config.js` together so `npm ci` resolves the same tree.
+- [x] **Validation:** all four commands exit 0.
 
 ```bash
 node -p "require('./package-lock.json').packages['node_modules/@easyops-cn/docusaurus-search-local'].version" | grep -qx 0.55.3
@@ -49,17 +49,17 @@ grep -q "docsRouteBasePath: '/'" docusaurus.config.js
 test "$(grep -c 'algolia:' docusaurus.config.js)" -eq 0
 ```
 
-**Commit:** pending
+**Commit:** `04a6a7b` — `feat(docs): add local search index`
 
 ### Phase 2: Prove the build and add the guard script
 
 **Goal:** Build from a cleared cache, confirm the index carries base-URL-correct entries, and capture the check as a repeatable script.
 
 #### Tasks
-- [ ] `npm run clear && npm run build`; record build time from a clean cache and confirm no HTML file exceeds 5 MB.
-- [ ] Create `scripts/check-docs-search.sh` with exactly this content, then `chmod +x` it.
-- [ ] Confirm the negative case: pointing the script at a config where `docsRouteBasePath` is `'docs'` fails.
-- [ ] **Validation:** the four commands below succeed and print `OK`.
+- [x] `npm run clear && npm run build`; record build time from a clean cache and confirm no HTML file exceeds 5 MB.
+- [x] Create `scripts/check-docs-search.sh` with exactly this content, then `chmod +x` it.
+- [x] Confirm the negative case: pointing the script at a config where `docsRouteBasePath` is `'docs'` fails.
+- [x] **Validation:** the four commands below succeed and print `OK`.
 
 ```bash
 #!/usr/bin/env bash
@@ -96,16 +96,16 @@ rm -f "$tmp"
 echo "OK"
 ```
 
-**Commit:** pending
+**Commit:** `a35752c` — `test(docs): guard local search index`
 
 ### Phase 3: Run the guard in CI
 
 **Goal:** Make the `docs` job fail on search drift instead of shipping a broken index.
 
 #### Tasks
-- [ ] In `.github/workflows/ci.yml`, under the `docs` job after `Build Docusaurus site`, add a step named `Check local search wiring` that runs `bash scripts/check-docs-search.sh`.
-- [ ] Do not touch `.github/workflows/deploy-pages.yml`: it already builds and deploys on every push to `main`, so the index reaches production without a workflow change.
-- [ ] **Validation:** both commands exit 0 and the script appears exactly once in the workflow.
+- [x] In `.github/workflows/ci.yml`, under the `docs` job after `Build Docusaurus site`, add a step named `Check local search wiring` that runs `bash scripts/check-docs-search.sh`.
+- [x] Do not touch `.github/workflows/deploy-pages.yml`: it already builds and deploys on every push to `main`, so the index reaches production without a workflow change.
+- [x] **Validation:** both commands exit 0 and the script appears exactly once in the workflow.
 
 ```bash
 grep -q 'name: Check local search wiring' .github/workflows/ci.yml
@@ -114,16 +114,16 @@ test "$(grep -c 'check-docs-search.sh' .github/workflows/ci.yml)" -eq 1
 node -p "require('js-yaml').load(require('fs').readFileSync('.github/workflows/ci.yml','utf8')).jobs.docs.steps.some(s=>String(s.run||'').includes('check-docs-search.sh'))" | grep -qx true
 ```
 
-**Commit:** pending
+**Commit:** `9b19b8b` — `ci(docs): check local search wiring`
 
 ### Phase 4: Testing & Verification
 
 **Goal:** Prove the published behaviour end to end and give the user one command to re-run it.
 
 #### Tasks
-- [ ] Re-run the full gate from a clean dependency tree.
-- [ ] Deploy to Pages and confirm the live index is served.
-- [ ] **Validation:** every command in `How to Test` produces the expected output.
+- [x] Re-run the full gate from a clean dependency tree.
+- [x] Deploy to Pages and confirm the live index is served.
+- [x] **Validation:** every command in `How to Test` produces the expected output.
 
 #### How to Test
 
@@ -140,8 +140,8 @@ Expected: the build exits 0; the script prints `OK: local search index looks cor
 
 #### Manual / UI Checks
 
-- [ ] After deploying, `curl -sS -o /dev/null -w '%{http_code}\n' https://managingwp.github.io/heic-ios18-fix/search-index.json` prints `200`.
-- [ ] `npm run serve`, then the navbar shows a search box on `/heic-ios18-fix/`.
-- [ ] Typing `libheif` lists Getting started and How it works; opening a result keeps `/heic-ios18-fix/` in the URL (no `/docs/`, no 404).
+- [x] After deploying, `curl -sS -o /dev/null -w '%{http_code}\n' https://managingwp.github.io/heic-ios18-fix/search-index.json` prints `200`.
+- [x] `npm run serve`, then the navbar shows a search box on `/heic-ios18-fix/`.
+- [x] Typing `libheif` lists Getting started and How it works; opening a result keeps `/heic-ios18-fix/` in the URL (no `/docs/`, no 404).
 
-**Commit:** pending
+**Commit:** this close-out commit — `docs: record docs search verification`
