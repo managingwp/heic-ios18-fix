@@ -145,15 +145,15 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 
 #### Tasks
 
-- [ ] Add `admin/class-heic-fix-monitor-admin.php` and `admin/partials/heic-fix-monitor-status.php`; render current state, text label plus icon, last checked/changed/good/notified times, per-signal reason/evidence table, schedule health, configured channel availability, and links to published monitoring/troubleshooting docs.
-- [ ] Register a Settings → HEIC Fix Monitor page with `manage_options`; re-check capability in every render/handler; escape text, attributes, URLs, translated strings, and intentionally allowed minimal HTML at output.
-- [ ] Add `admin-post.php` handler `hfm_run_check_now`; verify `hfm_run_check_now` nonce and `manage_options`, acquire the same re-entrancy lock as cron/CLI, invoke the probe engine with source `manual`, store transitions, dispatch according to normal policy, and redirect with a code-only admin notice.
-- [ ] Add handler `hfm_send_test`; verify a channel-specific nonce/capability and channel allowlist, build a synthetic redacted “test notification” event without changing monitor state, send only to the selected configured channel, and show a code-only result.
-- [ ] Add handler `hfm_reset_baseline`; mark it **DESTRUCTIVE TO PLUGIN HISTORY ONLY**, require a separate confirmation checkbox and nonce/capability, delete only `hfm_state`/notification timestamps, never server files/settings, and explain that the next `ok` is silent while the next non-`ok` alerts.
-- [ ] Do not enqueue public assets. If admin CSS is needed, add `admin/css/heic-fix-monitor-admin.css` and enqueue it only on this settings page; preserve readable focus, contrast, headings, table captions, and status text independent of color.
-- [ ] **Validation:** disposable WordPress tests return 403 for missing capability or invalid nonce, accept valid admin-post actions, never run a probe on frontend/admin page load, keep test-send/reset isolated from state incorrectly, and static escaping/i18n checks pass.
+- [x] Add `admin/class-heic-fix-monitor-admin.php` and `admin/partials/heic-fix-monitor-status.php`; render current state, text label plus icon, last checked/changed/good/notified times, per-signal reason/evidence table, schedule health, configured channel availability, and links to published monitoring/troubleshooting docs.
+- [x] Register a Settings → HEIC Fix Monitor page with `manage_options`; re-check capability in every render/handler; escape text, attributes, URLs, translated strings, and intentionally allowed minimal HTML at output.
+- [x] Add `admin-post.php` handler `hfm_run_check_now`; verify `hfm_run_check_now` nonce and `manage_options`, acquire the same re-entrancy lock as cron/CLI, invoke the probe engine with source `manual`, store transitions, dispatch according to normal policy, and redirect with a code-only admin notice.
+- [x] Add handler `hfm_send_test`; verify a channel-specific nonce/capability and channel allowlist, build a synthetic redacted “test notification” event without changing monitor state, send only to the selected configured channel, and show a code-only result.
+- [x] Add handler `hfm_reset_baseline`; mark it **DESTRUCTIVE TO PLUGIN HISTORY ONLY**, require a separate confirmation checkbox and nonce/capability, delete only `hfm_state`/notification timestamps, never server files/settings, and explain that the next `ok` is silent while the next non-`ok` alerts.
+- [x] Do not enqueue public assets. If admin CSS is needed, add `admin/css/heic-fix-monitor-admin.css` and enqueue it only on this settings page; preserve readable focus, contrast, headings, table captions, and status text independent of color.
+- [x] **Validation:** disposable WordPress tests return 403 for missing capability or invalid nonce, accept valid admin-post actions, never run a probe on frontend/admin page load, keep test-send/reset isolated from state incorrectly, and static escaping/i18n checks pass.
 
-**Commit:** `feat: add HEIC monitor admin status`
+**Commit:** `4a79b98` — `feat: add HEIC monitor admin status`
 
 ### Phase 7: Wire cron, WP-CLI, multisite, and lifecycle cleanup
 
