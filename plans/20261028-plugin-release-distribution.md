@@ -1,7 +1,7 @@
 # 20261028-plugin-release-distribution
 
 **Version:** 5
-**Status:** Not Started
+**Status:** 🚧 In Progress
 **Type:** feature
 
 ## Plan Contract
@@ -41,23 +41,23 @@ Defaults are executable; change only if a different audience or release policy i
 - **Creation:** `plan-generation-skill` (v5 contract, phases, validations, and test ledger); `lmt-skills-development-workflow` (sync, per-phase commits, push, inclusive terminology, and version ownership); `dependency-supply-chain-security` (no generated artifacts in Git, minimal ZIP, built-in `gh` CLI over third-party release actions).
 - **Implementation:** none yet.
 
-## Phases
-
-### Phase 1: Fix plugin tooling and add version ownership
+## Phases### Phase 1: Fix plugin tooling and add version ownership
 
 **Goal:** Make the plugin's development tooling valid and give the plugin one authoritative, independently scoped semantic version command.
 
 #### Tasks
 
-- [ ] Rewrite `wordpress-plugin/heic-fix-monitor/phpcs.xml.dist` as standalone XML by removing the leading PHP open tag and docblock; keep the WordPress ruleset, exclusions, and PHP 8.0+ test version.
-- [ ] Add `wordpress-plugin/heic-fix-monitor/bin/release.py` with `check` and `prepare` subcommands. `check --tag heic-monitor-vX.Y.Z` must parse the plugin header, `HFM_VERSION`, and readme `Stable tag`, require all three to match the tag, and reject malformed tags.
-- [ ] Implement `prepare X.Y.Z [--dry-run]` to synchronize those three plugin metadata fields through targeted replacements, require a clean working tree, refuse an existing `heic-monitor-vX.Y.Z` tag, and refuse a version that is not greater than the highest existing plugin tag. The command must never commit, tag, push, or publish.
-- [ ] Compare only `heic-monitor-v*` tags with semantic-version ordering; ignore `jekyll-docs-backup`, installer tags, and any non-plugin tag.
-- [ ] Add `wordpress-plugin/heic-fix-monitor/tests/test-release.py` covering matching and mismatched metadata, malformed and duplicate tags, version ordering such as `0.1.10 > 0.1.9`, dirty-tree refusal, dry-run leaving files byte-identical, and installer files remaining untouched.
-- [ ] Add `wordpress-plugin/heic-fix-monitor/docs/releasing.md` with the contributor sequence: confirm staging gate, run `prepare`, update the readme changelog, commit, run checks, create and push the annotated tag; add `docs/releasing.md` to `.distignore` and to the ZIP assertion's forbidden list.
-- [ ] **Validation:** `python3 wordpress-plugin/heic-fix-monitor/tests/test-release.py` exits 0; `python3 -c 'import xml.etree.ElementTree as E; E.parse("wordpress-plugin/heic-fix-monitor/phpcs.xml.dist")'` exits 0; `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.0` exits 0; `prepare 0.1.1 --dry-run` leaves `git diff --exit-code` clean.
+- [x] Rewrite `wordpress-plugin/heic-fix-monitor/phpcs.xml.dist` as standalone XML by removing the leading PHP open tag and docblock; keep the WordPress ruleset, exclusions, and PHP 8.0+ test version.
+- [x] Add `wordpress-plugin/heic-fix-monitor/bin/release.py` with `check` and `prepare` subcommands. `check --tag heic-monitor-vX.Y.Z` must parse the plugin header, `HFM_VERSION`, and readme `Stable tag`, require all three to match the tag, and reject malformed tags.
+- [x] Implement `prepare X.Y.Z [--dry-run]` to synchronize those three plugin metadata fields through targeted replacements, require a clean working tree, refuse an existing `heic-monitor-vX.Y.Z` tag, and refuse a version that is not greater than the highest existing plugin tag. The command must never commit, tag, push, or publish.
+- [x] Compare only `heic-monitor-v*` tags with semantic-version ordering; ignore `jekyll-docs-backup`, installer tags, and any non-plugin tag.
+- [x] Add `wordpress-plugin/heic-fix-monitor/tests/test-release.py` covering matching and mismatched metadata, malformed and duplicate tags, version ordering such as `0.1.10 > 0.1.9`, dirty-tree refusal, dry-run leaving files byte-identical, and installer files remaining untouched.
+- [x] Add `wordpress-plugin/heic-fix-monitor/docs/releasing.md` with the contributor sequence: confirm staging gate, run `prepare`, update the readme changelog, commit, run checks, create and push the annotated tag; add `docs/releasing.md` to `.distignore` and to the ZIP assertion's forbidden list.
+- [x] **Validation:** `python3 wordpress-plugin/heic-fix-monitor/tests/test-release.py` exits 0; `python3 -c 'import xml.etree.ElementTree as E; E.parse("wordpress-plugin/heic-fix-monitor/phpcs.xml.dist")'` exits 0; `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.0` exits 0; `prepare 0.1.1 --dry-run` leaves `git diff --exit-code` clean.
 
-**Commit:** `feat: add plugin-scoped release versioning`
+**Commit:** `c7c7400` — `feat: add plugin-scoped release versioning`
+
+
 
 ### Phase 2: Publish plugin releases from tags
 
