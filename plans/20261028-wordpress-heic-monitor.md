@@ -1,7 +1,7 @@
 # 20261028-wordpress-heic-monitor
 
 **Version:** 5
-**Status:** Not Started
+**Status:** 🚧 In Progress
 **Type:** feature
 
 ## Plan Contract
@@ -53,23 +53,23 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 - **Creation:** `plan-generation-skill` (v5 PGF contract, validation, test ledger, and approval workflow); `lmt-skills-development-workflow` (sync, per-phase commits, push, inclusive terminology, and release ownership); `wp-plugin-dev` (modular plugin/zip architecture); `settings-options-security` (typed Settings API schema and non-autoloaded options); `cron-background-job-security` (duplicate-safe site schedules and no-user cron context); `http-api-ssrf-prevention` (safe webhook delivery); `secrets-credentials-management` (constant-first encrypted secrets); `output-escaping` and `input-sanitization-validation` (late escaping and strict input schemas); `capability-permission-checks` and `nonces-csrf-protection` (privileged admin actions); `wp-cli-security` (argument-safe, non-destructive CLI); `user-data-protection-privacy` (data minimization and policy text); `dependency-supply-chain-security` (no runtime dependencies/remote code and minimal zip).
 - **Implementation:** none yet.
 
-## Phases
-
-### Phase 1: Freeze the plugin and probe contracts
+## Phases### Phase 1: Freeze the plugin and probe contracts
 
 **Goal:** Record executable interfaces, state precedence, fixtures, and packaging boundaries before runtime code is introduced.
 
 #### Tasks
 
-- [ ] Add `wordpress-plugin/heic-fix-monitor/docs/architecture.md` with the class map, hook names, option/transient names, constants, normalized result schema, precedence table, fingerprint exclusions, notification event table, and the exact read-only command allowlists from this contract.
-- [ ] Define plugin identifiers in that document: slug/text domain `heic-fix-monitor`, PHP prefix `hfm_`, class prefix `Heic_Fix_Monitor_`, cron hooks `hfm_run_check` and `hfm_daily_digest`, settings option `hfm_settings`, encrypted secrets option `hfm_secrets`, state option `hfm_state`, lock transient `hfm_run_lock`, and schema key `schema_version`.
-- [ ] Define interfaces/signatures before implementation: `Heic_Fix_Monitor_Probe_Interface::run( array $context ): array`, `Heic_Fix_Monitor_Probe_Engine::run( array $settings, string $source ): array`, `Heic_Fix_Monitor_State_Evaluator::evaluate( array $signals ): array`, `Heic_Fix_Monitor_State_Store::record( array $result ): array`, `Heic_Fix_Monitor_Notifier_Interface::send( array $event, array $settings ): array`, and `Heic_Fix_Monitor_Command_Runner::run( string $binary, array $args, int $timeout ): array`.
-- [ ] Add JSON fixtures under `wordpress-plugin/heic-fix-monitor/tests/fixtures/` for `known-good`, `linkage-shared`, `missing-imagick`, `decode-failed`, `prefix-missing`, `exec-disabled`, `check-timeout`, `malformed-check`, `resource-skipped`, and `recovery`; include expected aggregate state, normalized fingerprint input, and notification event count.
-- [ ] Add `wordpress-plugin/heic-fix-monitor/.distignore` listing tests, development configs, local artifacts, logs, `vendor/`, and VCS metadata; require the bundled sample and runtime docs in the zip.
-- [ ] Record that no version file, plugin `Version:` header, or `Stable tag` is changed by feature phases; the release helper assigns the release version.
-- [ ] **Validation:** `python3 -m json.tool` exits 0 for every fixture; a Python assertion confirms all ten fixture names and expected states exist; `grep -F` confirms every required interface signature and option/hook name in `docs/architecture.md`.
+- [x] Add `wordpress-plugin/heic-fix-monitor/docs/architecture.md` with the class map, hook names, option/transient names, constants, normalized result schema, precedence table, fingerprint exclusions, notification event table, and the exact read-only command allowlists from this contract.
+- [x] Define plugin identifiers in that document: slug/text domain `heic-fix-monitor`, PHP prefix `hfm_`, class prefix `Heic_Fix_Monitor_`, cron hooks `hfm_run_check` and `hfm_daily_digest`, settings option `hfm_settings`, encrypted secrets option `hfm_secrets`, state option `hfm_state`, lock transient `hfm_run_lock`, and schema key `schema_version`.
+- [x] Define interfaces/signatures before implementation: `Heic_Fix_Monitor_Probe_Interface::run( array $context ): array`, `Heic_Fix_Monitor_Probe_Engine::run( array $settings, string $source ): array`, `Heic_Fix_Monitor_State_Evaluator::evaluate( array $signals ): array`, `Heic_Fix_Monitor_State_Store::record( array $result ): array`, `Heic_Fix_Monitor_Notifier_Interface::send( array $event, array $settings ): array`, and `Heic_Fix_Monitor_Command_Runner::run( string $binary, array $args, int $timeout ): array`.
+- [x] Add JSON fixtures under `wordpress-plugin/heic-fix-monitor/tests/fixtures/` for `known-good`, `linkage-shared`, `missing-imagick`, `decode-failed`, `prefix-missing`, `exec-disabled`, `check-timeout`, `malformed-check`, `resource-skipped`, and `recovery`; include expected aggregate state, normalized fingerprint input, and notification event count.
+- [x] Add `wordpress-plugin/heic-fix-monitor/.distignore` listing tests, development configs, local artifacts, logs, `vendor/`, and VCS metadata; require the bundled sample and runtime docs in the zip.
+- [x] Record that no version file, plugin `Version:` header, or `Stable tag` is changed by feature phases; the release helper assigns the release version.
+- [x] **Validation:** `python3 -m json.tool` exits 0 for every fixture; a Python assertion confirms all ten fixture names and expected states exist; `grep -F` confirms every required interface signature and option/hook name in `docs/architecture.md`.
 
-**Commit:** `docs: define HEIC monitor contracts`
+**Commit:** `ec5e71b` — `docs: define HEIC monitor contracts`
+
+
 
 ### Phase 2: Scaffold the standalone plugin and secure settings
 
@@ -77,16 +77,16 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 
 #### Tasks
 
-- [ ] Add the minimal bootstrap `wordpress-plugin/heic-fix-monitor/heic-fix-monitor.php` with GPL-2.0-or-later metadata, `Requires at least: 6.4`, `Requires PHP: 8.0`, `ABSPATH` guard, release-owned version placeholder matching `readme.txt`, constants, class includes, activation/deactivation hooks, and one `hfm_run()` entry point only.
-- [ ] Add `includes/class-heic-fix-monitor.php` as the orchestrator and `includes/class-heic-fix-monitor-activator.php` / `class-heic-fix-monitor-deactivator.php`; activation creates only typed `autoload=no` options and site schedules, while deactivation clears both cron hooks and the run lock without deleting history.
-- [ ] Add `admin/class-heic-fix-monitor-settings.php` using `register_setting()` with a field-by-field `sanitize_callback`, typed defaults, `manage_options`, `settings_fields()`, and site-scoped options for PHP versions, prefix, sample, check binary, interval, timeout, decode resource thresholds/minimum interval, channels, recipients, re-notify window, retry bounds, digest enabled/time, and heartbeat enabled.
-- [ ] Validate PHP versions against `X.Y`; canonicalize absolute paths without requiring absent paths to exist at save time; enforce prefix/sample/check containment and check-path allowlisting at probe time; validate emails with `sanitize_email()` plus `is_email()`; validate enums and numeric ranges against documented bounds.
-- [ ] Add `includes/class-heic-fix-monitor-secret-store.php`: resolve `HEIC_FIX_MONITOR_SLACK_WEBHOOK_URL`, `HEIC_FIX_MONITOR_GENERIC_WEBHOOK_URL`, and `HEIC_FIX_MONITOR_GENERIC_WEBHOOK_TOKEN` first; otherwise encrypt/decrypt `hfm_secrets` with secretbox, preserve a masked field on blank/unchanged submissions, store with `autoload=no`, and return a `WP_Error` rather than persisting plaintext when encryption is unavailable.
-- [ ] Add `admin/partials/heic-fix-monitor-settings.php`; escape every value at output, mask secrets without exposing length/content, mark constant-backed fields read-only, use translated labels/help text, and pair text labels/icons with every status color.
-- [ ] Add `readme.txt`, `LICENSE`, `languages/heic-fix-monitor.pot` generation instructions, and compatibility guards that show an admin notice without executing probes on unsupported WordPress/PHP versions.
-- [ ] **Validation:** PHP lint passes for bootstrap/settings/secret/activation classes; a disposable WordPress activation exits 0; `wp option get hfm_settings --format=json` has the typed default shape; `wp option list --search=hfm_% --fields=option_name,autoload --format=csv` shows `off`/`no` autoloading for settings, secrets, and state; static assertions find a sanitizer, `manage_options`, escaping, and no plaintext secret getter in the template.
+- [x] Add the minimal bootstrap `wordpress-plugin/heic-fix-monitor/heic-fix-monitor.php` with GPL-2.0-or-later metadata, `Requires at least: 6.4`, `Requires PHP: 8.0`, `ABSPATH` guard, release-owned version placeholder matching `readme.txt`, constants, class includes, activation/deactivation hooks, and one `hfm_run()` entry point only.
+- [x] Add `includes/class-heic-fix-monitor.php` as the orchestrator and `includes/class-heic-fix-monitor-activator.php` / `class-heic-fix-monitor-deactivator.php`; activation creates only typed `autoload=no` options and site schedules, while deactivation clears both cron hooks and the run lock without deleting history.
+- [x] Add `admin/class-heic-fix-monitor-settings.php` using `register_setting()` with a field-by-field `sanitize_callback`, typed defaults, `manage_options`, `settings_fields()`, and site-scoped options for PHP versions, prefix, sample, check binary, interval, timeout, decode resource thresholds/minimum interval, channels, recipients, re-notify window, retry bounds, digest enabled/time, and heartbeat enabled.
+- [x] Validate PHP versions against `X.Y`; canonicalize absolute paths without requiring absent paths to exist at save time; enforce prefix/sample/check containment and check-path allowlisting at probe time; validate emails with `sanitize_email()` plus `is_email()`; validate enums and numeric ranges against documented bounds.
+- [x] Add `includes/class-heic-fix-monitor-secret-store.php`: resolve `HEIC_FIX_MONITOR_SLACK_WEBHOOK_URL`, `HEIC_FIX_MONITOR_GENERIC_WEBHOOK_URL`, and `HEIC_FIX_MONITOR_GENERIC_WEBHOOK_TOKEN` first; otherwise encrypt/decrypt `hfm_secrets` with secretbox, preserve a masked field on blank/unchanged submissions, store with `autoload=no`, and return a `WP_Error` rather than persisting plaintext when encryption is unavailable.
+- [x] Add `admin/partials/heic-fix-monitor-settings.php`; escape every value at output, mask secrets without exposing length/content, mark constant-backed fields read-only, use translated labels/help text, and pair text labels/icons with every status color.
+- [x] Add `readme.txt`, `LICENSE`, `languages/heic-fix-monitor.pot` generation instructions, and compatibility guards that show an admin notice without executing probes on unsupported WordPress/PHP versions.
+- [x] **Validation:** PHP lint passes for bootstrap/settings/secret/activation classes; a disposable WordPress activation exits 0; `wp option get hfm_settings --format=json` has the typed default shape; `wp option list --search=hfm_% --fields=option_name,autoload --format=csv` shows `off`/`no` autoloading for settings, secrets, and state; static assertions find a sanitizer, `manage_options`, escaping, and no plaintext secret getter in the template.
 
-**Commit:** `feat: scaffold secure HEIC monitor settings`
+**Commit:** `5f41330` — `feat: scaffold secure HEIC monitor settings`
 
 ### Phase 3: Implement the read-only probe engine
 
