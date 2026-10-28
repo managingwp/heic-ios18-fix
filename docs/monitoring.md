@@ -133,3 +133,13 @@ sudo /opt/heic-ios18-fix/heic-fix.sh php --php 8.3
 
 On Ubuntu 26.04, do not rebuild. Install `libheif-plugin-libde265` instead; see
 [Ubuntu 26.04](platforms/ubuntu-26-04.md).
+
+## WordPress-native monitor
+
+If the site runs WordPress, the standalone
+[HEIC Fix Monitor plugin](https://github.com/managingwp/heic-ios18-fix/tree/main/wordpress-plugin/heic-fix-monitor)
+performs the same read-only checks from the PHP-FPM request context, stores a
+fingerprint, and sends one alert per regression or recovery by email, Slack or
+JSON webhook. It also provides `wp heic-monitor check --notify` for system
+cron. The cron and monit examples above remain the right choice for servers
+without WordPress.

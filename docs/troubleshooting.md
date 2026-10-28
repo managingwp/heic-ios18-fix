@@ -200,3 +200,19 @@ symbols. `check`, `verify` and the pre-flight now require
   changes every process on the server;
 - run `enable` after a failed pre-flight. The refusal is the safety gate.
 
+## WordPress monitor states
+
+The [HEIC Fix Monitor plugin](https://github.com/managingwp/heic-ios18-fix/tree/main/wordpress-plugin/heic-fix-monitor)
+reports one aggregate state per check:
+
+| State | Meaning |
+| --- | --- |
+| `ok` | FPM Imagick decoded the verified sample and `check`/ELF facts agree. |
+| `degraded` | The primary decode is healthy, but a corroborating check was unavailable, skipped or errored. |
+| `affected` | Decode failed, Imagick/HEIC is missing, `check` reports affected, or linkage is not `static-hidden`. |
+| `missing` | The prefix, archives, sample, extension or ini is absent. |
+| `error` | The primary probe could not run or no trustworthy evidence was collected. |
+
+The status page names the exact reason code. A `degraded` result usually means
+`proc_open` is disabled, `check` timed out, or the decode was skipped by the
+memory guard; it does not mean the repair was silently changed.

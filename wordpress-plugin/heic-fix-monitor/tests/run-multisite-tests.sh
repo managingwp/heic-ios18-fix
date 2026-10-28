@@ -35,6 +35,7 @@ if [ "$(wp_cli eval 'echo is_multisite() ? "yes" : "no";')" != "yes" ]; then
 	wp_cli core multisite-convert --title="HEIC Monitor Multisite"
 fi
 
+wp_cli plugin deactivate "$PLUGIN" --network >/dev/null 2>&1 || true
 wp_cli plugin activate "$PLUGIN" --network
 
 if wp_cli option get hfm_settings --url="$BASE/" >/dev/null 2>&1; then
@@ -43,7 +44,12 @@ else
 	fail "network activation provisions the main site"
 fi
 
-second_id=$(wp_cli site create --slug=second --email=second@example.test --porcelain)
+second_id=$(wp_cli site list --fields=blog_id,slug --format=csv | awk -F, '$2 == "second" { print $1 }')
+if [ -z "$second_id" ]; then
+	second_id=$(wp_cli site create --slug=second --email=second@example.test --porcelain)
+	wp_cli plugin deactivate "$PLUGIN" --network >/dev/null 2>&1 || true
+	wp_cli plugin activate "$PLUGIN" --network
+fi
 if [ -n "$second_id" ]; then
 	pass "creates a second site"
 else

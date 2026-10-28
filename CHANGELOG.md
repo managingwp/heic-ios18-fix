@@ -20,6 +20,14 @@ All notable changes to this project are documented here. The format follows
 * Public iPhone 15 Pro / iOS 18.0 HEIC sample (libheif #1190) at
   `samples/failure_magick.HEIC` with a verified SHA256 checksum.
 * Docs build and link check in CI.
+* **HEIC Fix Monitor** WordPress plugin (`wordpress-plugin/heic-fix-monitor/`):
+  read-only FPM decode, optional `check`/ELF probes, deterministic state
+  fingerprints, transition and recovery alerts by email, Slack or JSON webhook,
+  optional digest, `wp heic-monitor check`, multisite provisioning, and a
+  standalone zip build. Secrets come from `wp-config.php` constants or an
+  encrypted, non-autoloaded option.
+* Plugin fixture, disposable WordPress single-site/multisite, admin action,
+  mocked webhook, static safety and zip-content checks in CI.
 
 ### Fixed
 

@@ -26,3 +26,6 @@ build/
 
 plans/.pgf.lock
 plans/.pgf.release.lock
+
+# Standalone plugin build artifacts
+wordpress-plugin/heic-fix-monitor/artifacts/

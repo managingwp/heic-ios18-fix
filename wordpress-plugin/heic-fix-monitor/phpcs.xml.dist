@@ -1,0 +1,27 @@
+<?php
+/**
+ * PHP_CodeSniffer ruleset for development.
+ *
+ * @package Heic_Fix_Monitor
+ */
+
+<ruleset name="HEIC Fix Monitor">
+	<description>WordPress Coding Standards for the standalone HEIC Fix Monitor plugin.</description>
+
+	<file>.</file>
+
+	<exclude-pattern>tests/*</exclude-pattern>
+	<exclude-pattern>bin/*</exclude-pattern>
+	<exclude-pattern>artifacts/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="p"/>
+
+	<rule ref="WordPress">
+		<exclude name="WordPress.Files.FileName"/>
+	</rule>
+
+	<config name="minimum_supported_wp_version" value="6.4"/>
+	<config name="testVersion" value="8.0-"/>
+</ruleset>

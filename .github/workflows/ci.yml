@@ -67,3 +67,31 @@ jobs:
             -e JOBS=4 \
             "ubuntu:${{ matrix.ubuntu }}" \
             bash /repo/tests/run-container-test.sh
+
+  plugin:
+    name: HEIC Fix Monitor plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: sodium, zip
+          tools: composer, phpcs
+          coverage: none
+      - name: Install WordPress Coding Standards
+        run: |
+          composer global require --no-interaction \
+            wp-coding-standards/wpcs \
+            dealerdirect/phpcodesniffer-composer-installer
+          echo "$HOME/.composer/vendor/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.config/composer/vendor/bin" >> "$GITHUB_PATH"
+      - name: Run plugin CI
+        run: bash wordpress-plugin/heic-fix-monitor/tests/ci-plugin.sh
+      - name: Upload plugin zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: heic-fix-monitor-plugin
+          path: wordpress-plugin/heic-fix-monitor/artifacts/heic-fix-monitor.zip
+          if-no-files-found: error
