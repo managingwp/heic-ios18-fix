@@ -178,16 +178,16 @@ Normalize sorted PHP targets and signals into JSON with schema version, aggregat
 
 #### Tasks
 
-- [ ] Add `wordpress-plugin/heic-fix-monitor/docs/configuration.md` covering prerequisites, site settings, constants, allowed check paths/hosts, encrypted-secret behavior, cron/system-cron setup, states, exit codes, resource guards, and uninstall behavior.
-- [ ] Update `docs/monitoring.md` with a short WordPress-native monitor section linking to the plugin docs; do not duplicate existing cron/monit examples. Update `docs/troubleshooting.md` with plugin state/reason-code guidance and the published troubleshooting URL used in notifications.
-- [ ] Update `README.md` with one concise plugin link and `CHANGELOG.md` `[Unreleased]` entries for the monitor, security boundaries, tests, and standalone package; do not edit release versions.
-- [ ] Add `wordpress-plugin/heic-fix-monitor/bin/build-zip.sh` that validates the distribution allowlist, copies to a temporary directory, rejects secrets/symlinks/dev files, produces `artifacts/heic-fix-monitor.zip`, and verifies archive paths are rooted under `heic-fix-monitor/`.
-- [ ] Add development-only `phpcs.xml.dist` for WordPress Coding Standards and a fixture/integration runner under `tests/`; no runtime `vendor/`, Composer autoloader, remote code, CDN asset, or bundled WordPress library may enter the zip.
-- [ ] Extend `.github/workflows/ci.yml` with a plugin job that installs PHP tooling in CI, runs lint/PHPCS when available, executes fixture tests, starts disposable WordPress single-site/multisite services, runs activation/lifecycle/CLI tests, builds the zip, and uploads it as a CI artifact. Keep existing shell/docs/container jobs unchanged.
-- [ ] Add a CI/static scan for `eval`, remote includes, dynamic shell command construction, plaintext secret option writes, forbidden mutating `heic-fix.sh` commands, and unescaped dynamic output; fail on findings outside explicit test fixtures.
-- [ ] **Validation:** docs build/link audit passes; the plugin CI commands pass; zip inspection contains expected runtime files/sample/license/readme and excludes tests/dev/VCS/vendor; repository version sources remain unchanged.
+- [x] Add `wordpress-plugin/heic-fix-monitor/docs/configuration.md` covering prerequisites, site settings, constants, allowed check paths/hosts, encrypted-secret behavior, cron/system-cron setup, states, exit codes, resource guards, and uninstall behavior.
+- [x] Update `docs/monitoring.md` with a short WordPress-native monitor section linking to the plugin docs; do not duplicate existing cron/monit examples. Update `docs/troubleshooting.md` with plugin state/reason-code guidance and the published troubleshooting URL used in notifications.
+- [x] Update `README.md` with one concise plugin link and `CHANGELOG.md` `[Unreleased]` entries for the monitor, security boundaries, tests, and standalone package; do not edit release versions.
+- [x] Add `wordpress-plugin/heic-fix-monitor/bin/build-zip.sh` that validates the distribution allowlist, copies to a temporary directory, rejects secrets/symlinks/dev files, produces `artifacts/heic-fix-monitor.zip`, and verifies archive paths are rooted under `heic-fix-monitor/`.
+- [x] Add development-only `phpcs.xml.dist` for WordPress Coding Standards and a fixture/integration runner under `tests/`; no runtime `vendor/`, Composer autoloader, remote code, CDN asset, or bundled WordPress library may enter the zip.
+- [x] Extend `.github/workflows/ci.yml` with a plugin job that installs PHP tooling in CI, runs lint/PHPCS when available, executes fixture tests, starts disposable WordPress single-site/multisite services, runs activation/lifecycle/CLI tests, builds the zip, and uploads it as a CI artifact. Keep existing shell/docs/container jobs unchanged.
+- [x] Add a CI/static scan for `eval`, remote includes, dynamic shell command construction, plaintext secret option writes, forbidden mutating `heic-fix.sh` commands, and unescaped dynamic output; fail on findings outside explicit test fixtures.
+- [x] **Validation:** docs build/link audit passes; the plugin CI commands pass; zip inspection contains expected runtime files/sample/license/readme and excludes tests/dev/VCS/vendor; repository version sources remain unchanged.
 
-**Commit:** `docs: package the HEIC monitor plugin`
+**Commit:** `757305b` — `docs: package the HEIC monitor plugin`
 
 ### Phase 9: Testing & Verification
 
