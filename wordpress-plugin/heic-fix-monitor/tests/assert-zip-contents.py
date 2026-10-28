@@ -23,6 +23,7 @@ FORBIDDEN = (
     "/artifacts/",
     "phpcs.xml.dist",
     "docs/architecture.md",
+    "docs/releasing.md",
     ".distignore",
     "node_modules",
     ".git/",

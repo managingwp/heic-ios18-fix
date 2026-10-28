@@ -1,10 +1,8 @@
-<?php
-/**
- * PHP_CodeSniffer ruleset for development.
- *
- * @package Heic_Fix_Monitor
- */
-
+<?xml version="1.0"?>
+<!--
+	PHP_CodeSniffer ruleset for the HEIC Fix Monitor plugin.
+	Development only; excluded from the release ZIP.
+-->
 <ruleset name="HEIC Fix Monitor">
 	<description>WordPress Coding Standards for the standalone HEIC Fix Monitor plugin.</description>
 

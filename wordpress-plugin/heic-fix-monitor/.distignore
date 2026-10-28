@@ -1,5 +1,6 @@
 tests/
 docs/architecture.md
+docs/releasing.md
 bin/
 artifacts/
 phpcs.xml.dist
