@@ -1,0 +1,94 @@
+{
+  "name": "recovery",
+  "description": "A shared-linkage regression is repaired: one regression alert, then one recovery notice.",
+  "runs": [
+    {
+      "imagick_decode": {
+        "signal": "imagick_decode",
+        "status": "affected",
+        "code": "decode_failed",
+        "summary": "The verified sample did not decode.",
+        "evidence": {
+          "sapi": "fpm",
+          "imagick": true,
+          "heic_formats": true,
+          "decode": "fail"
+        }
+      },
+      "check_command": {
+        "signal": "check_command",
+        "status": "affected",
+        "code": "linkage_shared",
+        "summary": "check reported shared linkage.",
+        "evidence": {
+          "php8.5": {
+            "status": "affected",
+            "imagick": "3.8.1",
+            "imagemagick": "7",
+            "heic": "yes",
+            "libheif": "1.12.0",
+            "linkage": "shared",
+            "decode": "fail"
+          }
+        }
+      },
+      "filesystem_elf": {
+        "signal": "filesystem_elf",
+        "status": "affected",
+        "code": "linkage_shared",
+        "summary": "MagickCore still needs a shared libheif.",
+        "evidence": {
+          "prefix": "present",
+          "linkage_static_hidden": false,
+          "shared_libheif": true
+        }
+      }
+    },
+    {
+      "imagick_decode": {
+        "signal": "imagick_decode",
+        "status": "ok",
+        "code": "decode_ok",
+        "summary": "The verified sample decodes again.",
+        "evidence": {
+          "sapi": "fpm",
+          "imagick": true,
+          "heic_formats": true,
+          "decode": "ok",
+          "jpeg_bytes": 4289303
+        }
+      },
+      "check_command": {
+        "signal": "check_command",
+        "status": "ok",
+        "code": "check_ok",
+        "summary": "check reported static-hidden linkage.",
+        "evidence": {
+          "php8.5": {
+            "status": "ok",
+            "imagick": "3.8.1",
+            "imagemagick": "7",
+            "heic": "yes",
+            "libheif": "1.23.7",
+            "linkage": "static-hidden",
+            "decode": "ok"
+          }
+        }
+      },
+      "filesystem_elf": {
+        "signal": "filesystem_elf",
+        "status": "ok",
+        "code": "filesystem_ok",
+        "summary": "Filesystem and ELF facts agree.",
+        "evidence": {
+          "prefix": "present",
+          "linkage_static_hidden": true,
+          "elf_checked": true
+        }
+      }
+    }
+  ],
+  "expected_states": ["affected", "ok"],
+  "expected_events": ["regression", "recovery"],
+  "expected_notifications": 2
+}

@@ -1,0 +1,46 @@
+{
+  "name": "exec-disabled",
+  "description": "Primary FPM decode is healthy; the shell-assisted check is unavailable because the runner is disabled.",
+  "runs": [
+    {
+      "imagick_decode": {
+        "signal": "imagick_decode",
+        "status": "ok",
+        "code": "decode_ok",
+        "summary": "FPM Imagick decoded the verified sample.",
+        "evidence": {
+          "sapi": "fpm",
+          "imagick": true,
+          "heic_formats": true,
+          "decode": "ok",
+          "jpeg_bytes": 4289303
+        }
+      },
+      "check_command": {
+        "signal": "check_command",
+        "status": "unavailable",
+        "code": "exec_disabled",
+        "summary": "Process execution is disabled.",
+        "evidence": {
+          "proc_open": false,
+          "exec": false
+        }
+      },
+      "filesystem_elf": {
+        "signal": "filesystem_elf",
+        "status": "ok",
+        "code": "filesystem_ok",
+        "summary": "Direct file facts are healthy.",
+        "evidence": {
+          "prefix": "present",
+          "static_archives": "present",
+          "linkage_static_hidden": true,
+          "elf_checked": false
+        }
+      }
+    }
+  ],
+  "expected_states": ["degraded"],
+  "expected_events": ["regression"],
+  "expected_notifications": 1
+}

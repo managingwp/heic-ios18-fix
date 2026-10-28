@@ -1,0 +1,50 @@
+{
+  "name": "missing-imagick",
+  "description": "The FPM SAPI has no Imagick extension after an update; check exits 3.",
+  "runs": [
+    {
+      "imagick_decode": {
+        "signal": "imagick_decode",
+        "status": "affected",
+        "code": "imagick_missing",
+        "summary": "Imagick is not loaded in this SAPI.",
+        "evidence": {
+          "sapi": "fpm",
+          "imagick": false
+        }
+      },
+      "check_command": {
+        "signal": "check_command",
+        "status": "affected",
+        "code": "no_imagick",
+        "summary": "check reported no Imagick for the target.",
+        "evidence": {
+          "php8.5": {
+            "status": "no-imagick",
+            "imagick": "none",
+            "imagemagick": "?",
+            "heic": "no",
+            "libheif": "unknown",
+            "linkage": "n/a",
+            "decode": "skipped"
+          }
+        }
+      },
+      "filesystem_elf": {
+        "signal": "filesystem_elf",
+        "status": "affected",
+        "code": "extension_missing",
+        "summary": "The enabled extension file is missing.",
+        "evidence": {
+          "prefix": "present",
+          "static_archives": "present",
+          "extension": "missing",
+          "ini": "enabled"
+        }
+      }
+    }
+  ],
+  "expected_states": ["affected"],
+  "expected_events": ["regression"],
+  "expected_notifications": 1
+}

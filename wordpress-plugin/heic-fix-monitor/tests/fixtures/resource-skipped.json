@@ -1,0 +1,48 @@
+{
+  "name": "resource-skipped",
+  "description": "Decode was skipped by the memory guard; check and filesystem remain healthy, so the state is degraded.",
+  "runs": [
+    {
+      "imagick_decode": {
+        "signal": "imagick_decode",
+        "status": "skipped",
+        "code": "memory_guard",
+        "summary": "Decode skipped: the memory limit is below the configured guard.",
+        "evidence": {
+          "memory_limit": "128M",
+          "required_memory": "256M"
+        }
+      },
+      "check_command": {
+        "signal": "check_command",
+        "status": "ok",
+        "code": "check_ok",
+        "summary": "check -q reported ok.",
+        "evidence": {
+          "php8.5": {
+            "status": "ok",
+            "imagick": "3.8.1",
+            "imagemagick": "7",
+            "heic": "yes",
+            "libheif": "1.23.7",
+            "linkage": "static-hidden",
+            "decode": "ok"
+          }
+        }
+      },
+      "filesystem_elf": {
+        "signal": "filesystem_elf",
+        "status": "ok",
+        "code": "filesystem_ok",
+        "summary": "Direct file facts are healthy.",
+        "evidence": {
+          "prefix": "present",
+          "linkage_static_hidden": true
+        }
+      }
+    }
+  ],
+  "expected_states": ["degraded"],
+  "expected_events": ["regression"],
+  "expected_notifications": 1
+}

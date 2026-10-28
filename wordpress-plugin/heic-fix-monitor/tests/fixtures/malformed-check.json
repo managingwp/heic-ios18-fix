@@ -1,0 +1,43 @@
+{
+  "name": "malformed-check",
+  "description": "check printed a field map that violates the stable contract; the corroborating signal is degraded.",
+  "runs": [
+    {
+      "imagick_decode": {
+        "signal": "imagick_decode",
+        "status": "ok",
+        "code": "decode_ok",
+        "summary": "FPM Imagick decoded the verified sample.",
+        "evidence": {
+          "sapi": "fpm",
+          "imagick": true,
+          "heic_formats": true,
+          "decode": "ok"
+        }
+      },
+      "check_command": {
+        "signal": "check_command",
+        "status": "error",
+        "code": "check_malformed",
+        "summary": "check output did not match the field contract.",
+        "evidence": {
+          "missing_fields": "linkage,decode",
+          "exit_code": 0
+        }
+      },
+      "filesystem_elf": {
+        "signal": "filesystem_elf",
+        "status": "ok",
+        "code": "filesystem_ok",
+        "summary": "Direct file facts are healthy.",
+        "evidence": {
+          "prefix": "present",
+          "linkage_static_hidden": true
+        }
+      }
+    }
+  ],
+  "expected_states": ["degraded"],
+  "expected_events": ["regression"],
+  "expected_notifications": 1
+}

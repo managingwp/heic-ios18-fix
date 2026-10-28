@@ -1,0 +1,46 @@
+{
+  "name": "check-timeout",
+  "description": "Primary decode is healthy; check exceeded its timeout, so the state degrades instead of escalating.",
+  "runs": [
+    {
+      "imagick_decode": {
+        "signal": "imagick_decode",
+        "status": "ok",
+        "code": "decode_ok",
+        "summary": "FPM Imagick decoded the verified sample.",
+        "evidence": {
+          "sapi": "fpm",
+          "imagick": true,
+          "heic_formats": true,
+          "decode": "ok",
+          "jpeg_bytes": 4289303
+        }
+      },
+      "check_command": {
+        "signal": "check_command",
+        "status": "error",
+        "code": "check_timeout",
+        "summary": "check did not finish within the timeout.",
+        "evidence": {
+          "timeout_seconds": 30,
+          "terminated": true,
+          "exit_code": null
+        }
+      },
+      "filesystem_elf": {
+        "signal": "filesystem_elf",
+        "status": "ok",
+        "code": "filesystem_ok",
+        "summary": "Direct file facts are healthy.",
+        "evidence": {
+          "prefix": "present",
+          "linkage_static_hidden": true,
+          "elf_checked": true
+        }
+      }
+    }
+  ],
+  "expected_states": ["degraded"],
+  "expected_events": ["regression"],
+  "expected_notifications": 1
+}

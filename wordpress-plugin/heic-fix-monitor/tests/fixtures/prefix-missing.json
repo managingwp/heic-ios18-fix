@@ -1,0 +1,39 @@
+{
+  "name": "prefix-missing",
+  "description": "The private prefix was removed; the plugin reports missing rather than affected.",
+  "runs": [
+    {
+      "imagick_decode": {
+        "signal": "imagick_decode",
+        "status": "missing",
+        "code": "sample_missing",
+        "summary": "The configured sample is absent.",
+        "evidence": {
+          "sample": "missing"
+        }
+      },
+      "check_command": {
+        "signal": "check_command",
+        "status": "missing",
+        "code": "prefix_missing",
+        "summary": "The configured prefix does not exist.",
+        "evidence": {
+          "prefix": "missing"
+        }
+      },
+      "filesystem_elf": {
+        "signal": "filesystem_elf",
+        "status": "missing",
+        "code": "prefix_missing",
+        "summary": "No prefix artifacts were found.",
+        "evidence": {
+          "prefix": "missing",
+          "static_archives": "missing"
+        }
+      }
+    }
+  ],
+  "expected_states": ["missing"],
+  "expected_events": ["regression"],
+  "expected_notifications": 1
+}

@@ -1,0 +1,9 @@
+tests/
+docs/architecture.md
+bin/
+artifacts/
+phpcs.xml.dist
+.distignore
+.gitignore
+*.log
+.DS_Store
