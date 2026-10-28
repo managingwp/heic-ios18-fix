@@ -39,3 +39,21 @@ Baseline: 2026-10-28
 - 2026-10-28T15:08:13Z | phase 9 | pass | 4f812f9 | `git diff --check`
 - 2026-10-28T15:08:17Z | phase 9 | pass | 4f812f9 | `npm run build` | [INFO] Use `npm run serve` command to test your build locally.
 - 2026-10-28T15:08:20Z | phase 9 | pass | 4f812f9 | `docker compose -f wordpress-plugin/heic-fix-monitor/tests/docker-compose.yml down -v` |  Volume tests_wp_data  Removed
+
+## 20261028-plugin-release-distribution
+- 2026-10-28T18:51:45Z | phase 4 | pass | ee7724d | `python3 wordpress-plugin/heic-fix-monitor/tests/test-release.py` | All release helper tests passed
+- 2026-10-28T18:51:45Z | phase 4 | pass | ee7724d | `python3 -c 'import xml.etree.ElementTree as E; E.parse("wordpress-plugin/heic-fix-monitor/phpcs.xml.dist")'`
+- 2026-10-28T18:51:45Z | phase 4 | pass | ee7724d | `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.0` | ok: heic-monitor-v0.1.0 matches plugin header, HFM_VERSION and Stable tag
+- 2026-10-28T18:51:45Z | phase 4 | fail | ee7724d | `python3 wordpress-plugin/heic-fix-monitor/bin/release.py prepare 0.1.1 --dry-run` | exit 1: error: working tree is not clean; commit or stash changes first
+- 2026-10-28T18:51:45Z | phase 4 | pass | ee7724d | `git diff --exit-code -- wordpress-plugin/heic-fix-monitor/heic-fix-monitor.php wordpress-plugin/heic-fix-monitor/readme.txt`
+- 2026-10-28T18:51:46Z | phase 4 | pass | ee7724d | `python3 wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` | All release workflow assertions passed
+- 2026-10-28T18:51:47Z | phase 4 | pass | ee7724d | `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/release-plugin.yml`
+- 2026-10-28T18:51:47Z | phase 4 | pass | ee7724d | `node --test tests/plugin-releases.test.mjs` | # duration_ms 132.188737
+- 2026-10-28T18:51:51Z | phase 4 | pass | ee7724d | `npm run build` | [INFO] Use `npm run serve` command to test your build locally.
+- 2026-10-28T18:51:52Z | phase 4 | pass | ee7724d | `docker run --rm -v "$PWD:/input" lycheeverse/lychee:latest --offline --no-progress /input/README.md /input/docs` | 🔍 87 Total (in 8ms) 🔗 31 Unique ✅ 68 OK 🚫 0 Errors 👻 19 Excluded
+- 2026-10-28T18:53:27Z | phase 4 | pass | ee7724d | `bash wordpress-plugin/heic-fix-monitor/tests/ci-plugin.sh` | PASS: plugin CI complete
+- 2026-10-28T18:53:41Z | phase 4 | pass | 6c6f2c7 | `tmp=$(mktemp -d); git clone -q . "$tmp/repo"; python3 wordpress-plugin/heic-fix-monitor/bin/release.py prepare 0.1.1 --dry-run --root "$tmp/repo/wordpress-plugin/heic-fix-monitor"; rc=$?; rm -rf "$tmp"; exit $rc` | would create tag heic-monitor-v0.1.1 after commit
+- 2026-10-28T18:53:41Z | phase 4 | pass | 6c6f2c7 | `bash wordpress-plugin/heic-fix-monitor/bin/build-zip.sh` | built /home/openchamber/git/heic-ios18-fix/wordpress-plugin/heic-fix-monitor/artifacts/heic-fix-monitor.zip (36 files)
+- 2026-10-28T18:53:41Z | phase 4 | pass | 6c6f2c7 | `python3 wordpress-plugin/heic-fix-monitor/tests/assert-zip-contents.py wordpress-plugin/heic-fix-monitor/artifacts/heic-fix-monitor.zip` | PASS: 36 entries, rooted, minimal
+- 2026-10-28T18:53:42Z | phase 4 | pass | 6c6f2c7 | `sha256sum -c samples/SHA256SUMS` | samples/failure_magick.HEIC: OK
+- 2026-10-28T18:53:42Z | phase 4 | pass | 6c6f2c7 | `git diff --check`

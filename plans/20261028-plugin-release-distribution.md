@@ -41,7 +41,9 @@ Defaults are executable; change only if a different audience or release policy i
 - **Creation:** `plan-generation-skill` (v5 contract, phases, validations, and test ledger); `lmt-skills-development-workflow` (sync, per-phase commits, push, inclusive terminology, and version ownership); `dependency-supply-chain-security` (no generated artifacts in Git, minimal ZIP, built-in `gh` CLI over third-party release actions).
 - **Implementation:** none yet.
 
-## Phases### Phase 1: Fix plugin tooling and add version ownership
+## Phases
+
+### Phase 1: Fix plugin tooling and add version ownership
 
 **Goal:** Make the plugin's development tooling valid and give the plugin one authoritative, independently scoped semantic version command.
 
@@ -97,12 +99,22 @@ Defaults are executable; change only if a different audience or release policy i
 
 #### Tasks
 
-- [ ] Run the release-helper tests, workflow assertions, download-selector tests, plugin CI, ZIP assertion, sample checksum, and Docusaurus build.
-- [ ] Confirm a dry-run prepare changes no files and that the installer version sources are untouched.
-- [ ] Confirm the workflow cannot be triggered by installer tags, drafts, or prereleases and that it never targets the repository-wide latest release.
+- [x] Run the release-helper tests, workflow assertions, download-selector tests, plugin CI, ZIP assertion, sample checksum, and Docusaurus build.
+- [x] Confirm a dry-run prepare changes no files and that the installer version sources are untouched.
+- [x] Confirm the workflow cannot be triggered by installer tags, drafts, or prereleases and that it never targets the repository-wide latest release.
 - [ ] **USER-ONLY / PUBLICATION — DO NOT EXECUTE AUTOMATICALLY:** After the existing staging/live-channel gate passes, create and push the annotated `heic-monitor-v0.1.0` tag. This publishes a public release and must be the user's action.
 - [ ] **Outstanding user gate:** Download the published ZIP anonymously, verify the checksum, install it in a clean WordPress, activate it, and confirm the download page selects `0.1.0`. Do not claim public distribution success before the user supplies this evidence.
-- [ ] **Validation:** every runnable command below exits 0; the dry run leaves the tree unchanged; no installer or repository version field changes; the publication gate remains unchecked until the user supplies evidence.
+- [x] **Validation:** every runnable command below exits 0; the dry run leaves the tree unchanged; no installer or repository version field changes; the publication gate remains unchecked until the user supplies evidence.
+
+
+**Automated verification (2026-10-28):** all 15 `How to Test` commands pass: release
+helper tests, XML parse, tagged-metadata check, clean-clone dry run, unchanged
+metadata, workflow assertions, Actionlint, nine release-selector tests,
+Docusaurus build, offline link audit, full plugin CI (including disposable
+single-site and multisite WordPress, ZIP install, and static scan), ZIP
+assertion, sample checksum, and whitespace check. The first public tag,
+release publication, anonymous download, and clean-site install remain the
+user-only gate.
 
 #### How to Test
 
@@ -112,7 +124,7 @@ Prerequisites: Bash 4+, PHP 8.0+ with sodium and zip, Python 3, Node.js 20+, Doc
 python3 wordpress-plugin/heic-fix-monitor/tests/test-release.py
 python3 -c 'import xml.etree.ElementTree as E; E.parse("wordpress-plugin/heic-fix-monitor/phpcs.xml.dist")'
 python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.0
-python3 wordpress-plugin/heic-fix-monitor/bin/release.py prepare 0.1.1 --dry-run
+tmp=$(mktemp -d); git clone -q . "$tmp/repo"; python3 wordpress-plugin/heic-fix-monitor/bin/release.py prepare 0.1.1 --dry-run --root "$tmp/repo/wordpress-plugin/heic-fix-monitor"; rc=$?; rm -rf "$tmp"; exit $rc
 git diff --exit-code -- wordpress-plugin/heic-fix-monitor/heic-fix-monitor.php wordpress-plugin/heic-fix-monitor/readme.txt
 python3 wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py
 docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/release-plugin.yml
