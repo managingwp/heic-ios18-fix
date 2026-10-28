@@ -34,6 +34,13 @@ define( 'HFM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 function hfm_load_classes() {
 	$files = array(
 		'includes/class-heic-fix-monitor-secret-store.php',
+		'includes/probes/interface-heic-fix-monitor-probe.php',
+		'includes/probes/class-heic-fix-monitor-probe-result.php',
+		'includes/probes/class-heic-fix-monitor-command-runner.php',
+		'includes/probes/class-heic-fix-monitor-imagick-probe.php',
+		'includes/probes/class-heic-fix-monitor-check-probe.php',
+		'includes/probes/class-heic-fix-monitor-filesystem-probe.php',
+		'includes/probes/class-heic-fix-monitor-probe-engine.php',
 		'includes/class-heic-fix-monitor-activator.php',
 		'includes/class-heic-fix-monitor-deactivator.php',
 		'admin/class-heic-fix-monitor-settings.php',
