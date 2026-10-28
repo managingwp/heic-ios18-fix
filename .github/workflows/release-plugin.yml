@@ -126,7 +126,7 @@ jobs:
           server state, decodes the bundled verified sample once per check, and
           never writes outside its own options and transients.
 
-          - [Configuration](https://managingwp.github.io/heic-ios18-fix/plugin-download/)
+          - [Configuration](https://github.com/managingwp/heic-ios18-fix/blob/main/wordpress-plugin/heic-fix-monitor/docs/configuration.md)
           - [Troubleshooting](https://managingwp.github.io/heic-ios18-fix/troubleshooting/)
           EOF
 

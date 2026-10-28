@@ -57,3 +57,5 @@ Baseline: 2026-10-28
 - 2026-10-28T18:53:41Z | phase 4 | pass | 6c6f2c7 | `python3 wordpress-plugin/heic-fix-monitor/tests/assert-zip-contents.py wordpress-plugin/heic-fix-monitor/artifacts/heic-fix-monitor.zip` | PASS: 36 entries, rooted, minimal
 - 2026-10-28T18:53:42Z | phase 4 | pass | 6c6f2c7 | `sha256sum -c samples/SHA256SUMS` | samples/failure_magick.HEIC: OK
 - 2026-10-28T18:53:42Z | phase 4 | pass | 6c6f2c7 | `git diff --check`
+- 2026-10-28T18:54:46Z | phase 4 | pass | dd7d15c | `python3 wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` | All release workflow assertions passed
+- 2026-10-28T18:54:47Z | phase 4 | pass | dd7d15c | `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/release-plugin.yml`
