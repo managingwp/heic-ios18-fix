@@ -1,0 +1,54 @@
+/*
+ * HEIC Fix Monitor admin styles.
+ * Status is always conveyed by icon and text; colour is supplementary.
+ */
+.hfm-wrap .hfm-state {
+	display: flex;
+	align-items: center;
+	gap: 0.4em;
+	font-size: 1.25em;
+	margin: 1em 0;
+}
+
+.hfm-wrap .hfm-state .dashicons {
+	width: 1em;
+	height: 1em;
+	font-size: 1em;
+}
+
+.hfm-wrap .hfm-state__code {
+	font-family: monospace;
+	font-size: 0.8em;
+	color: #50575e;
+}
+
+.hfm-wrap .hfm-state--ok {
+	color: #1e6b28;
+}
+
+.hfm-wrap .hfm-state--degraded {
+	color: #7a4f00;
+}
+
+.hfm-wrap .hfm-state--affected,
+.hfm-wrap .hfm-state--error {
+	color: #8a1f1f;
+}
+
+.hfm-wrap .hfm-state--missing {
+	color: #4a4a4a;
+}
+
+.hfm-wrap .hfm-meta th {
+	width: 16em;
+}
+
+.hfm-wrap .hfm-evidence {
+	margin: 0;
+	padding-left: 1.2em;
+}
+
+.hfm-wrap .hfm-evidence code {
+	background: transparent;
+	padding: 0;
+}

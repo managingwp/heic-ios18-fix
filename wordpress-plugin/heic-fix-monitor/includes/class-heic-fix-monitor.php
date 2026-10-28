@@ -44,6 +44,10 @@ final class Heic_Fix_Monitor {
 
 		Heic_Fix_Monitor_Settings::instance()->init();
 		Heic_Fix_Monitor_Notification_Manager::init();
+
+		if ( is_admin() ) {
+			Heic_Fix_Monitor_Admin::instance()->init();
+		}
 	}
 
 	/**

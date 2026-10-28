@@ -54,6 +54,7 @@ function hfm_load_classes() {
 		'includes/class-heic-fix-monitor-activator.php',
 		'includes/class-heic-fix-monitor-deactivator.php',
 		'admin/class-heic-fix-monitor-settings.php',
+		'admin/class-heic-fix-monitor-admin.php',
 		'includes/class-heic-fix-monitor.php',
 	);
 

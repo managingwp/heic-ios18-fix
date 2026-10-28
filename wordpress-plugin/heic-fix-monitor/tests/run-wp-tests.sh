@@ -102,6 +102,12 @@ if printf '%s\n' "$notify_output" | grep -q '^FAIL:'; then
 	fail "notification tests"
 fi
 
+admin_output=$(wp_cli eval-file /var/www/html/wp-content/plugins/$PLUGIN/tests/admin-tests.php 2>&1) || true
+printf '%s\n' "$admin_output"
+if printf '%s\n' "$admin_output" | grep -q '^FAIL:'; then
+	fail "admin tests"
+fi
+
 wp_cli plugin deactivate "$PLUGIN"
 wp_cli plugin activate "$PLUGIN"
 assert_eq "$(wp_cli plugin is-active "$PLUGIN" && echo active)" "active" "deactivation and reactivation leave the plugin active"
