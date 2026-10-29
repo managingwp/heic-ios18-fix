@@ -4,7 +4,7 @@ Tags: heic, imagick, monitoring, webhooks, diagnostics
 Requires at least: 6.4
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -82,6 +82,9 @@ was skipped by the memory guard. The status page names the exact reason code.
 2. Settings page with paths, schedule and channel configuration.
 
 == Changelog ==
+
+= 0.1.1 =
+* Coding-standard fixes, a stricter reset-input sanitizer, and release-pipeline repairs. No monitoring behavior change.
 
 = 0.1.0 =
 * Initial release: read-only probes, fingerprint transitions, email/Slack/JSON webhook alerts, digest, WP-CLI and multisite support.
