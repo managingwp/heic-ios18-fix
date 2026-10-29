@@ -1,0 +1,53 @@
+# docs-map.yaml — starter for a project using the docs sync skill.
+#
+# Copy this file to the repository root (or next to docusaurus.config.*) and fill
+# in every line. All paths are repo-relative. Delete a block only when the project
+# genuinely has no such source: an absent family is reported as "skipped", which
+# is honest, where a wrong value is a false green.
+#
+# The accepted syntax is a constrained YAML subset: top-level "key: value" pairs,
+# plus top-level lists whose items are indented exactly two spaces and start with
+# "- ". Full-line comments only. See references/project-map.md.
+
+# Directory holding docusaurus.config.js|ts|mjs. Use "." for a site at the root.
+site: .
+
+# Content directory the site renders. Not necessarily inside the site directory.
+docs: docs
+
+# Sidebar file that registers every page.
+sidebar: sidebars.ts
+
+# Env source of truth, and the prefix that marks a documented token as an env
+# variable. Remove both lines when the project has no env surface.
+env: .env.example
+env_prefix: APP_
+
+# Commands whose --help is the flag source of truth. Only include commands that
+# run locally without a service; a failing --help is a map error.
+commands:
+  - ./bin/example --help
+
+# Flags a page documents but this map cannot run: apt's own flags, gh, a
+# root-only installer. An entry no page mentions is reported as an advisory.
+ignore_flags:
+  - --allow-unauthenticated
+
+# Repo path prefixes docs are allowed to reference, each ending in "/" or naming
+# a file. Keep the list to directories pages actually mention.
+paths:
+  - bin/
+  - scripts/
+  - docs/
+
+# Pages a generator owns, as "path:marker". The marker must match the pair in the
+# page exactly. "generate" is the command that rewrites the block in place; it is
+# read, never executed, by the drift check.
+generated:
+  - docs/reference/cli.md:cli
+generate: ./scripts/gen-cli-reference.sh
+
+# Source paths whose changes make a page stale. Used by --report only.
+watch:
+  - bin/
+  - scripts/

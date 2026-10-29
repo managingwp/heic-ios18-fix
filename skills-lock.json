@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "lmt-skills-docusaurus-sync": {
+      "source": "jordantrizz/lmt-skills",
+      "sourceType": "github",
+      "skillPath": "skills/lmt-skills-docusaurus-sync/SKILL.md",
+      "computedHash": "dfbfcbaf2265e9c0a1e66d3fb8848f4c7ca01711f29f110cc5f717999479cceb"
+    }
+  }
+}

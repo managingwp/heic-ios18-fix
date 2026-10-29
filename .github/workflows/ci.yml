@@ -29,6 +29,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Docs drift check
+        run: bash .agents/skills/lmt-skills-docusaurus-sync/scripts/docs-drift.sh --check
       - uses: actions/setup-node@v4
         with:
           node-version: 20

@@ -1,0 +1,35 @@
+# docs-map.yaml — truth sources for the documentation site at the repo root.
+# See .agents/skills/lmt-skills-docusaurus-sync/references/project-map.md.
+site: .
+docs: docs
+sidebar: sidebars.js
+
+# The script's own usage text is the flag source of truth. Every documented flag
+# below exists in it; --jobs, --prefix and --sample are documented by hand.
+commands:
+  - ./heic-fix.sh --help
+
+# --latest=false is a `gh release create` flag used by the release workflow, not
+# a flag of heic-fix.sh.
+ignore_flags:
+  - --latest
+
+# Repo paths the docs are allowed to reference. build/ and .docusaurus/ are
+# generated, and node_modules/ is never referenced, so none of them are listed.
+paths:
+  - samples/
+  - tests/
+  - scripts/
+  - .github/
+  - docs/
+
+# No env source: LD_PRELOAD, PHP_INI_SCAN_DIR and HFM_VERSION are read from the
+# environment at run time, and no sample env file exists to compare against.
+#
+# No generated pages: the plugin release notes are written, not generated, and
+# docs/plugin-download.mdx is an MDX page rather than a marker block.
+
+# Sources whose changes make a page stale (--report only).
+watch:
+  - heic-fix.sh
+  - scripts/
