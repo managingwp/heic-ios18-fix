@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import Layout from '@theme/Layout';
 import {
   fetchLatestPluginRelease,
   pluginAssetUrl,
@@ -41,14 +40,8 @@ export default function PluginDownload() {
   }, []);
 
   return (
-    <Layout
-      title="Download HEIC Fix Monitor"
-      description="Download the independently versioned HEIC Fix Monitor WordPress plugin.">
-      <main className="container margin-vert--lg">
-        <div className="row">
-          <div className="col col--8 col--offset-2">
-            <h1>HEIC Fix Monitor plugin</h1>
-            <p>
+    <>
+      <p>
               Read-only monitoring and transition alerts for the iOS 18
               HEIC/Imagick repair. The ZIP is a standard WordPress plugin
               package with one top-level <code>heic-fix-monitor/</code>
@@ -142,12 +135,9 @@ export default function PluginDownload() {
               </>
             )}
 
-            <p>
-              <a href={RELEASES_PAGE}>All HEIC Fix Monitor releases</a>
-            </p>
-          </div>
-        </div>
-      </main>
-    </Layout>
+      <p>
+        <a href={RELEASES_PAGE}>All HEIC Fix Monitor releases</a>
+      </p>
+    </>
   );
 }

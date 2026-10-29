@@ -18,6 +18,7 @@ const sidebars = {
     'troubleshooting',
     'samples',
     'monitoring',
+    'plugin-download',
     'plugin-releases',
     'testing',
     'alternatives',

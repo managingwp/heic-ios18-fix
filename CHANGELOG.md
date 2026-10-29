@@ -33,6 +33,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+* Plugin download page now uses the Docusaurus docs layout, so the documentation
+  sidebar is available.
 * GD could capture ImageMagick's `heif_*` calls on Ubuntu 22.04 with PHP 8.5.
   Private SONAMEs isolated the loaded objects but not the exported function
   names, so `heif_context_alloc`, `heif_context_read_from_file` and
