@@ -20,7 +20,8 @@ Use semantic versioning:
 | New compatible feature | `0.2.0` |
 | Incompatible change | `1.0.0` |
 
-The first public release is `0.1.0`.
+The first published release is `0.1.1`. The `heic-monitor-v0.1.0` tag was
+superseded before any release object was published and must not be reused.
 
 ## 2. Synchronize plugin metadata
 
