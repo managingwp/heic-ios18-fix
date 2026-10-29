@@ -49,13 +49,13 @@ final class Heic_Fix_Monitor_Message_Builder {
 	 * @return array<string,mixed>
 	 */
 	public function build( array $event, array $settings ) {
-		$site   = $this->site_host();
-		$state  = isset( $event['state'] ) ? (string) $event['state'] : 'error';
-		$type   = isset( $event['type'] ) ? (string) $event['type'] : 'none';
-		$label  = self::LABELS[ $state ] ?? ucfirst( $state );
+		$site        = $this->site_host();
+		$state       = isset( $event['state'] ) ? (string) $event['state'] : 'error';
+		$type        = isset( $event['type'] ) ? (string) $event['type'] : 'none';
+		$label       = self::LABELS[ $state ] ?? ucfirst( $state );
 		$event_label = self::LABELS[ $type ] ?? ucfirst( $type );
-		$codes  = isset( $event['codes'] ) && is_array( $event['codes'] ) ? array_map( 'strval', $event['codes'] ) : array();
-		$php    = defined( 'PHP_VERSION' ) ? PHP_VERSION : phpversion();
+		$codes       = isset( $event['codes'] ) && is_array( $event['codes'] ) ? array_map( 'strval', $event['codes'] ) : array();
+		$php         = defined( 'PHP_VERSION' ) ? PHP_VERSION : phpversion();
 
 		$subject = sprintf( '[HEIC Fix Monitor] %s: %s on %s', $event_label, $label, $site );
 
@@ -71,7 +71,7 @@ final class Heic_Fix_Monitor_Message_Builder {
 			if ( ! is_array( $signal ) ) {
 				continue;
 			}
-			$lines[] = sprintf(
+			$lines[]  = sprintf(
 				'- %s: %s (%s)',
 				(string) $name,
 				(string) ( $signal['status'] ?? 'unknown' ),
@@ -93,7 +93,7 @@ final class Heic_Fix_Monitor_Message_Builder {
 		$text = implode( "\n", $lines );
 		$text = $this->redact( $text );
 
-		$html = '<p><strong>' . esc_html( $event_label ) . '</strong> — ' . esc_html( $site ) . '</p>';
+		$html  = '<p><strong>' . esc_html( $event_label ) . '</strong> — ' . esc_html( $site ) . '</p>';
 		$html .= '<p>' . esc_html( sprintf( 'State: %s (previously %s)', $label, isset( $event['previous_state'] ) && $event['previous_state'] ? ( self::LABELS[ $event['previous_state'] ] ?? $event['previous_state'] ) : 'none' ) ) . '</p>';
 		if ( ! empty( $codes ) ) {
 			$html .= '<p>' . esc_html( 'Reason codes: ' . implode( ', ', $codes ) ) . '</p>';
@@ -105,7 +105,7 @@ final class Heic_Fix_Monitor_Message_Builder {
 		$html .= '</ul>';
 		$html .= '<p>' . esc_html( 'Last good: ' . ( $last_good > 0 ? gmdate( 'Y-m-d H:i:s', $last_good ) . ' UTC' : 'never recorded' ) ) . '</p>';
 		$html .= '<p><a href="' . esc_url( self::TROUBLESHOOTING_URL ) . '">' . esc_html__( 'Repair and rollback runbook', 'heic-fix-monitor' ) . '</a></p>';
-		$html = $this->redact( $html );
+		$html  = $this->redact( $html );
 
 		$payload = array(
 			'schema_version'  => 1,

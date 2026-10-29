@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * A notification channel.
  */
-interface Heic_Fix_Monitor_Notifier_Interface { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedInterface -- Documented contract.
+interface Heic_Fix_Monitor_Notifier_Interface {
 
 	/**
 	 * Send one event.

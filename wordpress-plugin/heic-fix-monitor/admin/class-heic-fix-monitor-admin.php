@@ -189,7 +189,7 @@ final class Heic_Fix_Monitor_Admin {
 			wp_die( esc_html__( 'You are not allowed to reset the baseline.', 'heic-fix-monitor' ), 403 );
 		}
 
-		$confirmed = isset( $_POST['hfm_confirm_reset'] ) && '1' === (string) wp_unslash( $_POST['hfm_confirm_reset'] );
+		$confirmed = isset( $_POST['hfm_confirm_reset'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['hfm_confirm_reset'] ) );
 		if ( ! $confirmed ) {
 			$this->redirect( self::STATUS_PAGE, 'reset_unconfirmed' );
 		}

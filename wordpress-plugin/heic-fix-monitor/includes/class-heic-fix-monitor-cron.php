@@ -71,11 +71,11 @@ final class Heic_Fix_Monitor_Cron {
 			$schedules = array();
 		}
 
-		$schedules['hfm_15min'] = array(
+		$schedules['hfm_15min']  = array(
 			'interval' => 15 * MINUTE_IN_SECONDS,
 			'display'  => __( 'Every 15 minutes (HEIC Fix Monitor)', 'heic-fix-monitor' ),
 		);
-		$schedules['hfm_30min'] = array(
+		$schedules['hfm_30min']  = array(
 			'interval' => 30 * MINUTE_IN_SECONDS,
 			'display'  => __( 'Every 30 minutes (HEIC Fix Monitor)', 'heic-fix-monitor' ),
 		);
@@ -181,7 +181,7 @@ final class Heic_Fix_Monitor_Cron {
 			return;
 		}
 
-		$state = Heic_Fix_Monitor_State_Store::current();
+		$state  = Heic_Fix_Monitor_State_Store::current();
 		$status = isset( $state['state'] ) ? (string) $state['state'] : 'unknown';
 
 		if ( 'ok' === $status && empty( $settings['heartbeat_enabled'] ) ) {
@@ -199,7 +199,7 @@ final class Heic_Fix_Monitor_Cron {
 			return;
 		}
 
-		$site = wp_parse_url( home_url(), PHP_URL_HOST );
+		$site  = wp_parse_url( home_url(), PHP_URL_HOST );
 		$lines = array(
 			sprintf( 'HEIC Fix Monitor digest for %s', is_string( $site ) && '' !== $site ? $site : 'site' ),
 			'State: ' . Heic_Fix_Monitor_Admin::state_label( $status ) . ' (' . $status . ')',

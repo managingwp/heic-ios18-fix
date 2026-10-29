@@ -115,7 +115,7 @@ final class Heic_Fix_Monitor_Probe_Result {
 				if ( $count >= 20 || $budget <= 0 ) {
 					break;
 				}
-				$key = is_int( $key ) ? (string) $key : self::bounded_key( (string) $key );
+				$key           = is_int( $key ) ? (string) $key : self::bounded_key( (string) $key );
 				$clean[ $key ] = self::bounded_evidence( $item, $depth + 1, $budget );
 				++$count;
 			}

@@ -64,7 +64,7 @@ final class Heic_Fix_Monitor_Notification_Manager {
 				continue;
 			}
 
-			$result = $notifier->send( $event, $settings );
+			$result    = $notifier->send( $event, $settings );
 			$results[] = $result;
 
 			if ( 'failed' === ( $result['status'] ?? '' ) ) {
@@ -97,12 +97,12 @@ final class Heic_Fix_Monitor_Notification_Manager {
 
 		$current = Heic_Fix_Monitor_State_Store::current();
 		$event   = array(
-			'type'           => 'test',
+			'type'            => 'test',
 			'is_notification' => true,
-			'state'          => ! empty( $current['state'] ) ? (string) $current['state'] : 'ok',
-			'previous_state' => null,
-			'codes'          => array( 'manual_test' ),
-			'document'       => array(
+			'state'           => ! empty( $current['state'] ) ? (string) $current['state'] : 'ok',
+			'previous_state'  => null,
+			'codes'           => array( 'manual_test' ),
+			'document'        => array(
 				'signals' => array(
 					'imagick_decode' => array(
 						'status'   => 'ok',
@@ -111,8 +111,8 @@ final class Heic_Fix_Monitor_Notification_Manager {
 					),
 				),
 			),
-			'checked_at'     => time(),
-			'last_good'      => ! empty( $current['last_good'] ) ? (int) $current['last_good'] : 0,
+			'checked_at'      => time(),
+			'last_good'       => ! empty( $current['last_good'] ) ? (int) $current['last_good'] : 0,
 		);
 
 		return $notifier->send( $event, $settings );

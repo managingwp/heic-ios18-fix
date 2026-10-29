@@ -102,8 +102,8 @@ final class Heic_Fix_Monitor_Imagick_Probe implements Heic_Fix_Monitor_Probe_Int
 				'decode_rate_limited',
 				__( 'Decode skipped: the previous decode ran inside the minimum interval.', 'heic-fix-monitor' ),
 				array(
-					'source'          => $source,
-					'min_interval'    => $interval,
+					'source'       => $source,
+					'min_interval' => $interval,
 				)
 			);
 		}
@@ -123,8 +123,8 @@ final class Heic_Fix_Monitor_Imagick_Probe implements Heic_Fix_Monitor_Probe_Int
 			$image->clear();
 			$image->destroy();
 
-			$min_bytes = max( 128, (int) $settings['min_jpeg_bytes'] );
-			$min_width = max( 1, (int) $settings['min_width'] );
+			$min_bytes  = max( 128, (int) $settings['min_jpeg_bytes'] );
+			$min_width  = max( 1, (int) $settings['min_width'] );
 			$min_height = max( 1, (int) $settings['min_height'] );
 
 			if ( $bytes < $min_bytes || $width < $min_width || $height < $min_height ) {
@@ -174,12 +174,12 @@ final class Heic_Fix_Monitor_Imagick_Probe implements Heic_Fix_Monitor_Probe_Int
 				$this->classify_exception( $message ),
 				__( 'The sample could not be decoded through Imagick in this SAPI.', 'heic-fix-monitor' ),
 				array(
-					'sapi'        => PHP_SAPI,
-					'imagick'     => true,
+					'sapi'         => PHP_SAPI,
+					'imagick'      => true,
 					'heic_formats' => true,
-					'decode'      => 'fail',
-					'error_class' => $this->classify_exception( $message ),
-					'duration_ms' => (int) round( ( microtime( true ) - $started ) * 1000 ),
+					'decode'       => 'fail',
+					'error_class'  => $this->classify_exception( $message ),
+					'duration_ms'  => (int) round( ( microtime( true ) - $started ) * 1000 ),
 				)
 			);
 		}
@@ -195,7 +195,7 @@ final class Heic_Fix_Monitor_Imagick_Probe implements Heic_Fix_Monitor_Probe_Int
 		$configured = isset( $settings['sample_path'] ) ? trim( (string) $settings['sample_path'] ) : '';
 
 		if ( '' !== $configured ) {
-			$path = $configured;
+			$path   = $configured;
 			$source = 'configured';
 			if ( '/' !== substr( $path, 0, 1 ) || false !== strpos( $path, '..' ) ) {
 				return new WP_Error( 'sample_invalid', __( 'The configured sample path is not an absolute safe path.', 'heic-fix-monitor' ) );

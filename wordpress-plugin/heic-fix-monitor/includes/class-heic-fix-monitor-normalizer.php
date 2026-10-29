@@ -74,7 +74,7 @@ final class Heic_Fix_Monitor_Normalizer {
 			$clean   = array();
 
 			foreach ( $value as $key => $item ) {
-				$clean_key = $is_list ? (int) $key : Heic_Fix_Monitor_Probe_Result::bounded_key( (string) $key );
+				$clean_key           = $is_list ? (int) $key : Heic_Fix_Monitor_Probe_Result::bounded_key( (string) $key );
 				$clean[ $clean_key ] = $this->normalize_value( $item, $depth + 1 );
 			}
 

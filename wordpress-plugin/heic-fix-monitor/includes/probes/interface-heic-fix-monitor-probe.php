@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * A read-only probe returns one signal.
  */
-interface Heic_Fix_Monitor_Probe_Interface { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedInterface -- Documented contract.
+interface Heic_Fix_Monitor_Probe_Interface {
 
 	/**
 	 * Run the probe.

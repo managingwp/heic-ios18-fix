@@ -13,7 +13,7 @@ if ( ! current_user_can( 'manage_options' ) ) {
 	return;
 }
 
-$hfm_notice = isset( $_GET['hfm_notice'] ) ? sanitize_key( wp_unslash( (string) $_GET['hfm_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice code.
+$hfm_notice  = isset( $_GET['hfm_notice'] ) ? sanitize_key( wp_unslash( (string) $_GET['hfm_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice code.
 $hfm_notices = array(
 	'saved'       => array( 'success', __( 'Secret settings saved.', 'heic-fix-monitor' ) ),
 	'error'       => array( 'error', __( 'The secret could not be stored safely. Define the wp-config constants instead.', 'heic-fix-monitor' ) ),

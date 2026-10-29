@@ -23,9 +23,14 @@ final class Heic_Fix_Monitor_Probe_Engine {
 	 */
 	public function run( array $settings, $source = 'cron' ) {
 		$versions = isset( $settings['php_versions'] ) && is_array( $settings['php_versions'] ) ? $settings['php_versions'] : array();
-		$versions = array_values( array_filter( array_map( 'strval', $versions ), static function ( $version ) {
-			return (bool) preg_match( '/^[0-9]+\.[0-9]+$/', $version );
-		} ) );
+		$versions = array_values(
+			array_filter(
+				array_map( 'strval', $versions ),
+				static function ( $version ) {
+					return (bool) preg_match( '/^[0-9]+\.[0-9]+$/', $version );
+				}
+			)
+		);
 
 		if ( empty( $versions ) ) {
 			$versions = array( PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION );
@@ -62,7 +67,7 @@ final class Heic_Fix_Monitor_Probe_Engine {
 			}
 
 			try {
-				$probe = new $class();
+				$probe  = new $class();
 				$signal = $probe->run( $context );
 			} catch ( Throwable $exception ) {
 				$signal = Heic_Fix_Monitor_Probe_Result::make(

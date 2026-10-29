@@ -51,7 +51,7 @@ final class Heic_Fix_Monitor_Command_Runner {
 			return $result;
 		}
 
-		$command = array_merge( array( $binary ), array_map( 'strval', $args ) );
+		$command     = array_merge( array( $binary ), array_map( 'strval', $args ) );
 		$descriptors = array(
 			0 => array( 'pipe', 'r' ),
 			1 => array( 'pipe', 'w' ),
@@ -59,10 +59,10 @@ final class Heic_Fix_Monitor_Command_Runner {
 		);
 
 		$env = array(
-			'PATH'     => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
-			'LANG'     => 'C',
-			'LC_ALL'   => 'C',
-			'HOME'     => '/nonexistent',
+			'PATH'   => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+			'LANG'   => 'C',
+			'LC_ALL' => 'C',
+			'HOME'   => '/nonexistent',
 		);
 
 		$started = microtime( true );
@@ -82,9 +82,9 @@ final class Heic_Fix_Monitor_Command_Runner {
 		$stderr   = '';
 
 		while ( true ) {
-			$read = array( $pipes[1], $pipes[2] );
-			$write = null;
-			$except = null;
+			$read      = array( $pipes[1], $pipes[2] );
+			$write     = null;
+			$except    = null;
 			$remaining = $deadline - microtime( true );
 
 			if ( $remaining <= 0 ) {
@@ -97,7 +97,10 @@ final class Heic_Fix_Monitor_Command_Runner {
 			$micro   = (int) ( ( min( 1.0, $remaining ) - $seconds ) * 1000000 );
 			$ready   = @stream_select( $read, $write, $except, $seconds, $micro ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Interrupted select is handled by the loop.
 
-			foreach ( array( 1 => 'stdout', 2 => 'stderr' ) as $index => $target ) {
+			foreach ( array(
+				1 => 'stdout',
+				2 => 'stderr',
+			) as $index => $target ) {
 				while ( isset( $pipes[ $index ] ) && is_resource( $pipes[ $index ] ) ) {
 					$chunk = fread( $pipes[ $index ], 8192 );
 					if ( false === $chunk || '' === $chunk ) {

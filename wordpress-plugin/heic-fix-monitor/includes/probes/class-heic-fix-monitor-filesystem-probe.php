@@ -68,7 +68,7 @@ final class Heic_Fix_Monitor_Filesystem_Probe implements Heic_Fix_Monitor_Probe_
 		$recorded = $this->read_versions( $prefix . '/installed-versions.txt' );
 		$evidence = array_merge( $evidence, $recorded['evidence'] );
 
-		$static = $prefix . '/heif-static/lib';
+		$static      = $prefix . '/heif-static/lib';
 		$archives_ok = is_file( $static . '/libheif.a' );
 		if ( 'system' !== ( $recorded['values']['LIBDE265_MODE'] ?? '' ) ) {
 			$archives_ok = $archives_ok && is_file( $static . '/libde265.a' );
@@ -113,12 +113,12 @@ final class Heic_Fix_Monitor_Filesystem_Probe implements Heic_Fix_Monitor_Probe_
 			}
 
 			if ( 'missing' === $entry['ini'] ) {
-				$affected = true;
-				$codes[]  = 'ini_missing';
+				$affected             = true;
+				$codes[]              = 'ini_missing';
 				$entry['ini_enabled'] = false;
 			} else {
-				$contents = $this->read_file( $ini );
-				$enabled  = false !== strpos( $contents, 'extension=' . $extension )
+				$contents             = $this->read_file( $ini );
+				$enabled              = false !== strpos( $contents, 'extension=' . $extension )
 					|| false !== strpos( $contents, 'extension = ' . $extension );
 				$entry['ini_enabled'] = $enabled;
 				if ( ! $enabled ) {
@@ -167,11 +167,11 @@ final class Heic_Fix_Monitor_Filesystem_Probe implements Heic_Fix_Monitor_Probe_
 			}
 		}
 
-		$linked = isset( $elf['needed'] ) ? implode( ',', array_intersect( array( 'libheif.so.1', 'libheif-heicfix.so.1' ), (array) $elf['needed'] ) ) : '';
+		$linked                            = isset( $elf['needed'] ) ? implode( ',', array_intersect( array( 'libheif.so.1', 'libheif-heicfix.so.1' ), (array) $elf['needed'] ) ) : '';
 		$evidence['linkage_static_hidden'] = $elf['checked']
 			? ( empty( $elf['shared_libheif'] ) && empty( $elf['exported_heif_symbols'] ) )
 			: null;
-		$evidence['elf_checked'] = (bool) $elf['checked'];
+		$evidence['elf_checked']           = (bool) $elf['checked'];
 
 		if ( $affected ) {
 			$code = ! empty( $codes ) ? $codes[0] : 'filesystem_affected';
@@ -187,7 +187,7 @@ final class Heic_Fix_Monitor_Filesystem_Probe implements Heic_Fix_Monitor_Probe_
 				array_merge(
 					$evidence,
 					array(
-						'codes'         => implode( ',', array_unique( $codes ) ),
+						'codes'          => implode( ',', array_unique( $codes ) ),
 						'linked_libheif' => $linked,
 					)
 				)
@@ -226,7 +226,7 @@ final class Heic_Fix_Monitor_Filesystem_Probe implements Heic_Fix_Monitor_Probe_
 				continue;
 			}
 			list( $key, $value ) = explode( '=', $line, 2 );
-			$key = trim( $key );
+			$key                 = trim( $key );
 			if ( in_array( $key, self::VERSION_KEYS, true ) ) {
 				$values[ $key ] = trim( $value );
 			}
@@ -262,8 +262,8 @@ final class Heic_Fix_Monitor_Filesystem_Probe implements Heic_Fix_Monitor_Probe_
 	/**
 	 * Inspect ELF metadata with readelf.
 	 *
-	 * @param string                            $core   MagickCore path.
-	 * @param Heic_Fix_Monitor_Command_Runner   $runner Runner.
+	 * @param string                          $core   MagickCore path.
+	 * @param Heic_Fix_Monitor_Command_Runner $runner Runner.
 	 * @return array<string,mixed>
 	 */
 	private function inspect_elf( $core, $runner ) {
@@ -293,7 +293,7 @@ final class Heic_Fix_Monitor_Filesystem_Probe implements Heic_Fix_Monitor_Probe_
 			$needed = array_values( array_unique( $matches[1] ) );
 		}
 
-		$symbols = $runner->run( $readelf, array( '--wide', '--dyn-syms', $core ), 20 );
+		$symbols  = $runner->run( $readelf, array( '--wide', '--dyn-syms', $core ), 20 );
 		$exported = array();
 		if ( empty( $symbols['error'] ) && empty( $symbols['timed_out'] ) ) {
 			if ( preg_match_all( '/^\s*\d+:\s+[0-9a-fA-F]+\s+\d+\s+FUNC\s+(?:GLOBAL|WEAK)\s+DEFAULT\s+\d+\s+(heif_[A-Za-z0-9_]+)\s*$/m', (string) $symbols['stdout'], $matches ) ) {
@@ -301,10 +301,10 @@ final class Heic_Fix_Monitor_Filesystem_Probe implements Heic_Fix_Monitor_Probe_
 			}
 		}
 
-		$ldd = '/usr/bin/ldd';
+		$ldd        = '/usr/bin/ldd';
 		$unresolved = false;
 		if ( is_executable( $ldd ) ) {
-			$extension = dirname( $core ) . '/../php';
+			$extension  = dirname( $core ) . '/../php';
 			$ldd_result = $runner->run( $ldd, array( $core ), 20 );
 			if ( empty( $ldd_result['error'] ) && false !== strpos( (string) $ldd_result['stdout'], 'not found' ) ) {
 				$unresolved = true;

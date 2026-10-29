@@ -1,6 +1,6 @@
 <?php
 /**
- * heic-fix.sh check probe.
+ * Probe for the heic-fix.sh check contract.
  *
  * @package Heic_Fix_Monitor
  */
@@ -35,10 +35,10 @@ final class Heic_Fix_Monitor_Check_Probe implements Heic_Fix_Monitor_Probe_Inter
 	 * @return array<string,mixed>
 	 */
 	public function run( array $context ) {
-		$settings  = isset( $context['settings'] ) && is_array( $context['settings'] ) ? $context['settings'] : array();
-		$runner    = isset( $context['runner'] ) ? $context['runner'] : new Heic_Fix_Monitor_Command_Runner();
-		$versions  = isset( $context['php_versions'] ) && is_array( $context['php_versions'] ) ? $context['php_versions'] : array();
-		$timeout   = isset( $settings['timeout'] ) ? (int) $settings['timeout'] : 30;
+		$settings = isset( $context['settings'] ) && is_array( $context['settings'] ) ? $context['settings'] : array();
+		$runner   = isset( $context['runner'] ) ? $context['runner'] : new Heic_Fix_Monitor_Command_Runner();
+		$versions = isset( $context['php_versions'] ) && is_array( $context['php_versions'] ) ? $context['php_versions'] : array();
+		$timeout  = isset( $settings['timeout'] ) ? (int) $settings['timeout'] : 30;
 
 		if ( empty( $settings['check_enabled'] ) ) {
 			return Heic_Fix_Monitor_Probe_Result::make(
@@ -121,7 +121,7 @@ final class Heic_Fix_Monitor_Check_Probe implements Heic_Fix_Monitor_Probe_Inter
 			$exit = isset( $result['exit_code'] ) ? (int) $result['exit_code'] : -1;
 
 			if ( 2 === $exit ) {
-				$failed = true;
+				$failed                       = true;
 				$evidence[ 'php' . $version ] = array(
 					'exit_code' => 2,
 					'status'    => 'error',
@@ -143,7 +143,7 @@ final class Heic_Fix_Monitor_Check_Probe implements Heic_Fix_Monitor_Probe_Inter
 				);
 			}
 
-			$fields = $parsed['versions'][ $version ];
+			$fields                       = $parsed['versions'][ $version ];
 			$evidence[ 'php' . $version ] = array(
 				'status'      => $fields['status'],
 				'imagick'     => $fields['imagick'],
@@ -246,7 +246,7 @@ final class Heic_Fix_Monitor_Check_Probe implements Heic_Fix_Monitor_Probe_Inter
 				);
 			}
 
-			$fields = array();
+			$fields  = array();
 			$missing = array();
 			foreach ( preg_split( '/\s+/', trim( $matches[2] ) ) as $pair ) {
 				if ( ! preg_match( '/^([a-z_]+)=(\S+)$/', $pair, $field ) ) {

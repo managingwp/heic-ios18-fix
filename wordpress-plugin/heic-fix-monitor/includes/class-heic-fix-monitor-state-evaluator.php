@@ -36,7 +36,7 @@ final class Heic_Fix_Monitor_State_Evaluator {
 				continue;
 			}
 
-			$status = isset( $signals[ $name ]['status'] ) ? (string) $signals[ $name ]['status'] : 'error';
+			$status            = isset( $signals[ $name ]['status'] ) ? (string) $signals[ $name ]['status'] : 'error';
 			$statuses[ $name ] = $status;
 
 			if ( 'ok' !== $status && isset( $signals[ $name ]['code'] ) ) {

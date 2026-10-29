@@ -41,11 +41,11 @@ final class Heic_Fix_Monitor_Settings {
 	 * @var array<string,string>
 	 */
 	const INTERVALS = array(
-		'hfm_15min'   => 'Every 15 minutes',
-		'hfm_30min'   => 'Every 30 minutes',
-		'hourly'      => 'Hourly',
-		'hfm_6hours'  => 'Every 6 hours',
-		'daily'       => 'Daily',
+		'hfm_15min'  => 'Every 15 minutes',
+		'hfm_30min'  => 'Every 30 minutes',
+		'hourly'     => 'Hourly',
+		'hfm_6hours' => 'Every 6 hours',
+		'daily'      => 'Daily',
 	);
 
 	/**
@@ -75,30 +75,30 @@ final class Heic_Fix_Monitor_Settings {
 	 */
 	public static function defaults() {
 		return array(
-			'php_versions'         => array(),
-			'prefix'               => '/opt/heic-ios18-fix',
-			'sample_path'          => '',
-			'check_binary'         => '/opt/heic-ios18-fix/heic-fix.sh',
-			'check_enabled'        => 1,
-			'filesystem_enabled'   => 1,
-			'decode_enabled'       => 1,
-			'interval'             => 'hourly',
-			'timeout'              => 30,
-			'decode_min_interval'  => 300,
-			'memory_floor_mb'      => 256,
-			'min_jpeg_bytes'       => 1024,
-			'min_width'            => 100,
-			'min_height'           => 100,
-			'email_enabled'        => 1,
-			'emails'               => array(),
-			'slack_enabled'        => 0,
-			'webhook_enabled'      => 0,
-			'renotify_hours'       => 24,
-			'retry_max'            => 2,
-			'webhook_timeout'      => 5,
-			'digest_enabled'       => 0,
-			'digest_time'          => '08:00',
-			'heartbeat_enabled'    => 0,
+			'php_versions'        => array(),
+			'prefix'              => '/opt/heic-ios18-fix',
+			'sample_path'         => '',
+			'check_binary'        => '/opt/heic-ios18-fix/heic-fix.sh',
+			'check_enabled'       => 1,
+			'filesystem_enabled'  => 1,
+			'decode_enabled'      => 1,
+			'interval'            => 'hourly',
+			'timeout'             => 30,
+			'decode_min_interval' => 300,
+			'memory_floor_mb'     => 256,
+			'min_jpeg_bytes'      => 1024,
+			'min_width'           => 100,
+			'min_height'          => 100,
+			'email_enabled'       => 1,
+			'emails'              => array(),
+			'slack_enabled'       => 0,
+			'webhook_enabled'     => 0,
+			'renotify_hours'      => 24,
+			'retry_max'           => 2,
+			'webhook_timeout'     => 5,
+			'digest_enabled'      => 0,
+			'digest_time'         => '08:00',
+			'heartbeat_enabled'   => 0,
 		);
 	}
 
@@ -242,7 +242,7 @@ final class Heic_Fix_Monitor_Settings {
 
 		$clean['emails'] = $this->sanitize_emails( $input['emails'] ?? array() );
 
-		$digest_time = isset( $input['digest_time'] ) ? sanitize_text_field( (string) $input['digest_time'] ) : '';
+		$digest_time          = isset( $input['digest_time'] ) ? sanitize_text_field( (string) $input['digest_time'] ) : '';
 		$clean['digest_time'] = preg_match( '/^([01][0-9]|2[0-3]):[0-5][0-9]$/', $digest_time )
 			? $digest_time
 			: $current['digest_time'];
