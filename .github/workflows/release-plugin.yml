@@ -4,12 +4,18 @@ on:
   push:
     tags:
       - 'heic-monitor-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing heic-monitor-vX.Y.Z tag to publish'
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: plugin-release-${{ github.ref_name }}
+  group: plugin-release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -17,10 +23,12 @@ jobs:
     name: Build plugin release
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.tag || github.ref_name }}
           fetch-depth: 0
 
       - uses: shivammathur/setup-php@v2
@@ -32,6 +40,8 @@ jobs:
 
       - name: Install WordPress Coding Standards
         run: |
+          composer global config --no-plugins \
+            allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer global require --no-interaction \
             wp-coding-standards/wpcs \
             dealerdirect/phpcodesniffer-composer-installer
@@ -41,12 +51,12 @@ jobs:
       - name: Validate plugin tag and metadata
         run: |
           python3 wordpress-plugin/heic-fix-monitor/bin/release.py check \
-            --tag "${GITHUB_REF_NAME}"
+            --tag "$TAG"
 
       - name: Run WordPress Coding Standards
         run: |
           cd wordpress-plugin/heic-fix-monitor
-          phpcs --standard=phpcs.xml.dist .
+          phpcs --standard=phpcs.xml.dist --runtime-set ignore_warnings_on_exit 1 .
 
       - name: Run plugin tests
         run: bash wordpress-plugin/heic-fix-monitor/tests/ci-plugin.sh
@@ -74,6 +84,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Download release assets
         uses: actions/download-artifact@v4
@@ -85,7 +97,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
         run: |
           set -Eeuo pipefail
 

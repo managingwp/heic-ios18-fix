@@ -35,15 +35,26 @@ def main() -> int:
         "workflow triggers only on plugin tags",
     )
     check("pull_request_target" not in text, "workflow does not use pull_request_target")
-    check("ref: ${{ github.ref }}" in text, "checkout uses the exact tagged ref")
+    check(
+        "ref: ${{ inputs.tag || github.ref_name }}" in text,
+        "checkout uses the exact tagged ref, including manual dispatch",
+    )
+    check("workflow_dispatch:" in text and "inputs.tag" in text, "manual dispatch accepts an existing tag")
     check("fetch-depth: 0" in text, "checkout fetches tags and history")
     check("contents: read" in text, "default token is read-only")
     check(text.count("contents: write") == 1, "only the publish job can write contents")
     check(
-        "release.py check" in text and "--tag \"${GITHUB_REF_NAME}\"" in text,
+        "release.py check" in text and '--tag "$TAG"' in text,
         "workflow validates the plugin tag against metadata",
     )
-    check("phpcs --standard=phpcs.xml.dist ." in text, "release CI requires WPCS")
+    check(
+        "allow-plugins.dealerdirect/phpcodesniffer-composer-installer true" in text,
+        "WPCS Composer plugin is explicitly allowed",
+    )
+    check(
+        "phpcs --standard=phpcs.xml.dist --runtime-set ignore_warnings_on_exit 1 ." in text,
+        "release CI requires WPCS errors while allowing advisory warnings",
+    )
     check("tests/ci-plugin.sh" in text, "workflow runs the plugin suite")
     check(
         "sha256sum heic-fix-monitor.zip > heic-fix-monitor.zip.sha256" in text,

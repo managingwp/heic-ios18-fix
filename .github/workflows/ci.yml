@@ -84,6 +84,8 @@ jobs:
           coverage: none
       - name: Install WordPress Coding Standards
         run: |
+          composer global config --no-plugins \
+            allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer global require --no-interaction \
             wp-coding-standards/wpcs \
             dealerdirect/phpcodesniffer-composer-installer

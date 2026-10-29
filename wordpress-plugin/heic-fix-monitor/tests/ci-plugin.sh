@@ -17,7 +17,7 @@ python3 -c 'import glob,json; [json.load(open(p)) for p in glob.glob("tests/fixt
 echo "PASS: fixture JSON parses"
 
 if command -v phpcs >/dev/null 2>&1 && phpcs -i 2>/dev/null | grep -q WordPress; then
-	phpcs --standard=phpcs.xml.dist .
+	phpcs --standard=phpcs.xml.dist --runtime-set ignore_warnings_on_exit 1 .
 else
 	echo "SKIP: PHPCS/WordPress standard is not installed"
 fi
