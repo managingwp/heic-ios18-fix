@@ -60,6 +60,8 @@ Baseline: 2026-10-28
 - 2026-10-28T18:54:46Z | phase 4 | pass | dd7d15c | `python3 wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` | All release workflow assertions passed
 - 2026-10-28T18:54:47Z | phase 4 | pass | dd7d15c | `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/release-plugin.yml`
 
+- 2026-10-29T08:32:47Z | phase 4 | pass | ff485c6 | `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.1` | ok: heic-monitor-v0.1.1 matches plugin header, HFM_VERSION and Stable tag
+- 2026-10-29T08:32:47Z | phase 4 | pass | ff485c6 | `tmp=$(mktemp -d); git clone -q . "$tmp/repo"; python3 wordpress-plugin/heic-fix-monitor/bin/release.py prepare 0.1.2 --dry-run --root "$tmp/repo/wordpress-plugin/heic-fix-monitor"; rc=$?; rm -rf "$tmp"; exit $rc` | would create tag heic-monitor-v0.1.2 after commit
 ## 20261028-docs-local-search
 - 2026-10-28T19:25:12Z | phase 4 | pass | 9b19b8b | `npm ci` | Run `npm audit` for details.
 - 2026-10-28T19:25:22Z | phase 4 | pass | 9b19b8b | `npm run build` | [INFO] Use `npm run serve` command to test your build locally.
