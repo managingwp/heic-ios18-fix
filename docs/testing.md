@@ -78,7 +78,12 @@ docker run --rm -v "$PWD:/repo:ro" \
 - shellcheck against `heic-fix.sh` and `tests/*.sh`;
 - the container test on Ubuntu 22.04 with PHP 8.3 and 8.5, and on Ubuntu 24.04
   with PHP 8.3;
-- a docs build and link check for the GitHub Pages site.
+- a docs build and link check for the GitHub Pages site;
+- a plugin job: release-helper and release-selector tests, WPCS, fixtures,
+  disposable single-site and multisite WordPress, and a clean-site ZIP install.
+
+The tag-triggered plugin release workflow is documented in
+[Plugin releases](plugin-releases.md).
 
 ## Shellcheck
 

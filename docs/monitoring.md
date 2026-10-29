@@ -146,3 +146,5 @@ without WordPress.
 
 Download the installable ZIP from the
 [plugin download page](https://managingwp.github.io/heic-ios18-fix/plugin-download/).
+Versioning and the maintainer workflow are documented in
+[Plugin releases](plugin-releases.md).

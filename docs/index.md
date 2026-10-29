@@ -22,6 +22,7 @@ version you choose. The system ImageMagick, libheif, PHP packages and
 - [How it works](how-it-works.md) — the GD symbol-capture trap and the private prefix.
 - [Troubleshooting](troubleshooting.md) — common package and verification failures.
 - [Samples](samples.md) — the real iPhone HEIC used to prove decoding.
+- [Plugin releases](plugin-releases.md) — download the WordPress monitor and follow its release workflow.
 
 ## What it fixes
 
@@ -75,6 +76,7 @@ and how to replace it with the original BTN photo.
 | [Troubleshooting](troubleshooting.md) | PCRE2 conflicts, stock imagick after verify |
 | [Samples](samples.md) | Sample rules, checksums, synthetic test file |
 | [Monitoring](monitoring.md) | Cron, monit and alert examples |
+| [Plugin releases](plugin-releases.md) | Download, independent versioning and release workflow |
 | [Testing](testing.md) | Container tests, CI and real-sample proof |
 | [Alternatives](alternatives.md) | Convert at upload, browser WASM, OS upgrade |
 | [References](references.md) | Upstream issues and discussions |

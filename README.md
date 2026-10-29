@@ -104,8 +104,9 @@ Published site: <https://managingwp.github.io/heic-ios18-fix/>
 | [Troubleshooting](docs/troubleshooting.md) | PCRE2 conflicts, stock imagick after verify |
 | [Samples](docs/samples.md) | Sample rules and synthetic files |
 | [Monitoring](docs/monitoring.md) | Cron, monit and alerts |
+| [Plugin releases](https://managingwp.github.io/heic-ios18-fix/plugin-releases/) | Download, versioning and release workflow |
 | [WordPress monitor](wordpress-plugin/heic-fix-monitor/docs/configuration.md) | Read-only plugin with transition alerts and WP-CLI |
-| [Plugin download](https://managingwp.github.io/heic-ios18-fix/plugin-download/) | Installable WordPress ZIP and plugin release history |
+| [Latest plugin build](https://managingwp.github.io/heic-ios18-fix/plugin-download/) | Newest installable WordPress ZIP and release history |
 | [Testing](docs/testing.md) | Container tests and CI |
 | [Alternatives](docs/alternatives.md) | Upload conversion, browser WASM, OS upgrade |
 | [References](docs/references.md) | Upstream issues and discussions |

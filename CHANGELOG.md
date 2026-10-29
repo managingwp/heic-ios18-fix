@@ -28,6 +28,8 @@ All notable changes to this project are documented here. The format follows
   encrypted, non-autoloaded option.
 * Plugin fixture, disposable WordPress single-site/multisite, admin action,
   mocked webhook, static safety and zip-content checks in CI.
+* Plugin release documentation for independent `heic-monitor-vX.Y.Z` versioning,
+  the public download page, and the tag-triggered GitHub Release workflow.
 
 ### Fixed
 
