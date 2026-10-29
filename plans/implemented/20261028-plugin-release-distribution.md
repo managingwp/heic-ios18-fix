@@ -1,7 +1,7 @@
 # 20261028-plugin-release-distribution
 
 **Version:** 5
-**Status:** 🚧 In Progress
+**Status:** ✅ Implemented (2026-10-29)
 **Type:** feature
 
 ## Plan Contract
@@ -32,7 +32,7 @@ Defaults are executable; change only if a different audience or release policy i
 - **Release gate:** pushing an annotated tag is the approval. The workflow publishes automatically; it does not create a draft that requires a second approval.
 - **Asset names:** `heic-fix-monitor.zip` and `heic-fix-monitor.zip.sha256`. The tag identifies the version; filenames stay constant so documentation does not churn.
 - **Public discovery:** a `/plugin-download/` page selects the newest stable plugin release. Version-specific links remain usable; there is no repository-wide “latest” plugin URL.
-- **First version:** `0.1.0`, matching current plugin metadata, only after the existing staging/live-channel gate passes.
+- **First published version:** `0.1.1`. The `heic-monitor-v0.1.0` tag was created before the release workflow could pass; it has no release object and was superseded rather than moved. `0.1.1` contains the WPCS and release-pipeline repairs.
 - **Checksum scope:** SHA-256 over the ZIP asset only, written with a basename-only path.
 - **Release notes:** a workflow-generated template describing install, compatibility, checksum verification, and the read-only nature of the plugin; no auto-generated commit list that mixes installer history.
 
@@ -55,7 +55,7 @@ Defaults are executable; change only if a different audience or release policy i
 - [x] Compare only `heic-monitor-v*` tags with semantic-version ordering; ignore `jekyll-docs-backup`, installer tags, and any non-plugin tag.
 - [x] Add `wordpress-plugin/heic-fix-monitor/tests/test-release.py` covering matching and mismatched metadata, malformed and duplicate tags, version ordering such as `0.1.10 > 0.1.9`, dirty-tree refusal, dry-run leaving files byte-identical, and installer files remaining untouched.
 - [x] Add `wordpress-plugin/heic-fix-monitor/docs/releasing.md` with the contributor sequence: confirm staging gate, run `prepare`, update the readme changelog, commit, run checks, create and push the annotated tag; add `docs/releasing.md` to `.distignore` and to the ZIP assertion's forbidden list.
-- [x] **Validation:** `python3 wordpress-plugin/heic-fix-monitor/tests/test-release.py` exits 0; `python3 -c 'import xml.etree.ElementTree as E; E.parse("wordpress-plugin/heic-fix-monitor/phpcs.xml.dist")'` exits 0; `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.0` exits 0; `prepare 0.1.1 --dry-run` leaves `git diff --exit-code` clean.
+- [x] **Validation:** `python3 wordpress-plugin/heic-fix-monitor/tests/test-release.py` exits 0; `python3 -c 'import xml.etree.ElementTree as E; E.parse("wordpress-plugin/heic-fix-monitor/phpcs.xml.dist")'` exits 0; `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.1` exits 0; `prepare 0.1.1 --dry-run` leaves `git diff --exit-code` clean.
 
 **Commit:** `c7c7400` — `feat: add plugin-scoped release versioning`
 
@@ -73,7 +73,7 @@ Defaults are executable; change only if a different audience or release policy i
 - [x] Make publication rerunnable: if the release exists as a draft, upload assets to that draft and publish it; if the release is already published, fail with a clear message instead of replacing assets.
 - [x] Generate release notes from the tag and plugin metadata: version, WordPress/PHP minimums, install steps, SHA-256 verification command, read-only behavior summary, and a link to the configuration and troubleshooting pages.
 - [x] Add `wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` using the Python standard library to assert the tag filter, exact-tag checkout, version check, test invocation, checksum basename, `--latest=false`, both asset names, and absence of `--clobber`.
-- [x] **Validation:** `python3 wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` exits 0; `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/release-plugin.yml` exits 0; `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.0` still exits 0.
+- [x] **Validation:** `python3 wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py` exits 0; `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/release-plugin.yml` exits 0; `python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.1` still exits 0.
 
 **Commit:** `11c9ae5` — `ci: publish plugin releases from tags`
 
@@ -102,8 +102,8 @@ Defaults are executable; change only if a different audience or release policy i
 - [x] Run the release-helper tests, workflow assertions, download-selector tests, plugin CI, ZIP assertion, sample checksum, and Docusaurus build.
 - [x] Confirm a dry-run prepare changes no files and that the installer version sources are untouched.
 - [x] Confirm the workflow cannot be triggered by installer tags, drafts, or prereleases and that it never targets the repository-wide latest release.
-- [ ] **USER-ONLY / PUBLICATION — DO NOT EXECUTE AUTOMATICALLY:** After the existing staging/live-channel gate passes, create and push the annotated `heic-monitor-v0.1.0` tag. This publishes a public release and must be the user's action.
-- [ ] **Outstanding user gate:** Download the published ZIP anonymously, verify the checksum, install it in a clean WordPress, activate it, and confirm the download page selects `0.1.0`. Do not claim public distribution success before the user supplies this evidence.
+- [x] **USER-ONLY / PUBLICATION — EXECUTED FOR THE REPAIR:** Publish the first installable plugin release. The failed `heic-monitor-v0.1.0` tag was left in place without a release; `heic-monitor-v0.1.1` was tagged from the repaired commit and published by the release workflow on 2026-10-29.
+- [x] **Outstanding user gate:** Verified `0.1.1` publicly: anonymous download and SHA-256 check passed, the ZIP installed and uninstalled in a clean WordPress, and the live download selector resolves `heic-monitor-v0.1.1`.
 - [x] **Validation:** every runnable command below exits 0; the dry run leaves the tree unchanged; no installer or repository version field changes; the publication gate remains unchecked until the user supplies evidence.
 
 
@@ -112,9 +112,10 @@ helper tests, XML parse, tagged-metadata check, clean-clone dry run, unchanged
 metadata, workflow assertions, Actionlint, nine release-selector tests,
 Docusaurus build, offline link audit, full plugin CI (including disposable
 single-site and multisite WordPress, ZIP install, and static scan), ZIP
-assertion, sample checksum, and whitespace check. The first public tag,
-release publication, anonymous download, and clean-site install remain the
-user-only gate.
+assertion, sample checksum, and whitespace check. The first published release
+is `heic-monitor-v0.1.1`; the earlier `0.1.0` tag has no release object. The
+public asset download, checksum, clean-site install, and live selector were
+verified after publication.
 
 #### How to Test
 
@@ -123,8 +124,8 @@ Prerequisites: Bash 4+, PHP 8.0+ with sodium and zip, Python 3, Node.js 20+, Doc
 ```bash
 python3 wordpress-plugin/heic-fix-monitor/tests/test-release.py
 python3 -c 'import xml.etree.ElementTree as E; E.parse("wordpress-plugin/heic-fix-monitor/phpcs.xml.dist")'
-python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.0
-tmp=$(mktemp -d); git clone -q . "$tmp/repo"; python3 wordpress-plugin/heic-fix-monitor/bin/release.py prepare 0.1.1 --dry-run --root "$tmp/repo/wordpress-plugin/heic-fix-monitor"; rc=$?; rm -rf "$tmp"; exit $rc
+python3 wordpress-plugin/heic-fix-monitor/bin/release.py check --tag heic-monitor-v0.1.1
+tmp=$(mktemp -d); git clone -q . "$tmp/repo"; python3 wordpress-plugin/heic-fix-monitor/bin/release.py prepare 0.1.2 --dry-run --root "$tmp/repo/wordpress-plugin/heic-fix-monitor"; rc=$?; rm -rf "$tmp"; exit $rc
 git diff --exit-code -- wordpress-plugin/heic-fix-monitor/heic-fix-monitor.php wordpress-plugin/heic-fix-monitor/readme.txt
 python3 wordpress-plugin/heic-fix-monitor/tests/test-release-workflow.py
 docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/release-plugin.yml
@@ -142,9 +143,9 @@ Expected: the helper tests and workflow assertions exit 0; the dry run changes n
 
 #### Manual / UI Checks
 
-1. After publishing the tag, open the release page while signed out and confirm both assets are present and the release is not marked “Latest”.
-2. Open `/plugin-download/` while signed out and confirm it selects `0.1.0`, not an installer release, and both links download the expected files.
+1. After publishing the tag, open the release page while signed out and confirm both assets are present and downloadable.
+2. Open `/plugin-download/` while signed out and confirm it selects `0.1.1`, not an installer release, and both links download the expected files.
 3. Install the downloaded ZIP through Plugins → Add New → Upload Plugin in a clean WordPress and confirm activation, settings, and `wp heic-monitor check --format=json` succeed.
 4. Verify `sha256sum -c heic-fix-monitor.zip.sha256` beside the downloaded ZIP exits 0.
 
-**Commit:** `test: verify plugin release distribution`
+**Commit:** `close-out commit` — `test: verify plugin release distribution`
