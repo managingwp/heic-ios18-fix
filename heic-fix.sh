@@ -3,8 +3,15 @@
 # heic-fix.sh - restore iOS 18+ HEIC support in PHP Imagick on Debian/Ubuntu.
 #
 # Builds libde265, libheif and ImageMagick 7 into an isolated prefix
-# (/opt/heic-ios18-fix by default) and builds a matching Imagick extension for
-# one or more PHP versions. System libraries are never replaced.
+# (/usr/local/lib/heic-ios18-fix by default) and builds a matching Imagick
+# extension for one or more PHP versions. System libraries are never replaced.
+#
+# The default prefix lives under /usr/local/lib so that every PHP-FPM and
+# WP-CLI user on the server can dlopen the extension. GridPane ships /opt with
+# an ACL that denies the GridPane-System-Users group, so an installation in
+# /opt is invisible to site users even though it is mode 0755. Older
+# installations in /opt/heic-ios18-fix are still usable through --prefix; they
+# are reported, never migrated in place.
 #
 # libheif and libde265 are linked statically into libMagickCore with hidden
 # symbols, so the system libheif that PHP's GD extension loads first cannot
@@ -25,7 +32,11 @@ SCRIPT_NAME=$(basename -- "${BASH_SOURCE[0]}")
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 SCRIPT_VERSION="1.0.2"
 
-PREFIX="/opt/heic-ios18-fix"
+DEFAULT_PREFIX="${HEIC_FIX_DEFAULT_PREFIX:-/usr/local/lib/heic-ios18-fix}"
+LEGACY_PREFIX="${HEIC_FIX_LEGACY_PREFIX:-/opt/heic-ios18-fix}"
+
+PREFIX="$DEFAULT_PREFIX"
+PREFIX_EXPLICIT=0
 SAMPLE=""
 ASSUME_YES=0
 QUIET=0
@@ -137,7 +148,9 @@ COMMANDS
 
 OPTIONS
   --php X.Y             Target PHP version (repeatable). Default: all installed.
-  --prefix DIR          Install prefix (default: /opt/heic-ios18-fix).
+  --prefix DIR          Install prefix (default: /usr/local/lib/heic-ios18-fix).
+                        The default is readable by every site user; a prefix
+                        under /opt or /root usually is not.
   --sample FILE         HEIC sample used to prove decoding works.
                         Default: <repo>/samples/failure_magick.HEIC.
   --system-libde265     Link libheif against the distro libde265 instead of
@@ -528,6 +541,143 @@ init_paths() {
     PHPROOT="$PREFIX/php"
     VERSIONS_FILE="$PREFIX/installed-versions.txt"
     TMPDIR_PREFIX="$PREFIX/tmp"
+}
+
+# ---------------------------------------------------------------------------
+# Prefix selection and non-owner readability
+# ---------------------------------------------------------------------------
+#
+# PHP-FPM and WP-CLI run as the site's system user, which is neither root nor
+# the installer. Everything the extension dlopens must therefore be reachable
+# through mode bits alone. These helpers report the problem; they never change
+# ownership, modes or ACLs.
+
+prefix_has_install() {
+    local dir=$1
+    [[ -f "$dir/installed-versions.txt" ]] && return 0
+    compgen -G "$dir/php/*/imagick.so" >/dev/null
+}
+
+legacy_prefix_hint() {
+    (( QUIET )) && return 0
+    (( PREFIX_EXPLICIT )) && return 0
+    prefix_has_install "$PREFIX" && return 0
+    prefix_has_install "$LEGACY_PREFIX" || return 0
+
+    warn "found an installation in $LEGACY_PREFIX, which is not in use this run."
+    warn "the default prefix moved to $PREFIX so site users outside the"
+    warn "installer's group can load the extension."
+    printf '  Inspect the old build : %s status --prefix %s\n' "$SCRIPT_NAME" "$LEGACY_PREFIX" >&2
+    printf '  Migrate               : rebuild at the new prefix; imagick.so and\n' >&2
+    printf '                          MagickCore embed absolute rpaths, so copying\n' >&2
+    printf '                          files does not carry them across.\n' >&2
+    printf '  Runbook               : docs/troubleshooting.md\n' >&2
+    printf '  Nothing in %s was changed.\n' "$LEGACY_PREFIX" >&2
+}
+
+# Echo a reason a non-owner cannot use $1, or nothing when the mode is enough.
+path_access_problem() {
+    local path=$1
+    if [[ ! -e $path ]]; then
+        printf 'missing'
+        return 0
+    fi
+    local owner mode
+    owner=$(stat -c '%u' -- "$path" 2>/dev/null) || { printf 'stat failed'; return 0; }
+    mode=$(stat -c '%a' -- "$path" 2>/dev/null) || { printf 'stat failed'; return 0; }
+    if [[ ! $mode =~ ^[0-7]{3,4}$ ]]; then
+        printf 'unreadable mode %s' "$mode"
+        return 0
+    fi
+    if [[ $owner != "0" ]]; then
+        printf 'owned by uid %s, expected root' "$owner"
+        return 0
+    fi
+    if (( (8#$mode & 0022) != 0 )); then
+        printf 'mode %s is group/other writable' "$mode"
+        return 0
+    fi
+    if (( (8#$mode & 0044) == 0 )); then
+        printf 'mode %s is not readable by a non-owner' "$mode"
+        return 0
+    fi
+    if [[ -d $path ]] && (( (8#$mode & 0011) == 0 )); then
+        printf 'mode %s is not traversable by a non-owner' "$mode"
+        return 0
+    fi
+    return 0
+}
+
+# Traversal only: ancestors outside the prefix are not expected to be ours.
+path_traverse_problem() {
+    local path=$1
+    local mode
+    mode=$(stat -c '%a' -- "$path" 2>/dev/null) || { printf 'stat failed'; return 0; }
+    if [[ ! $mode =~ ^[0-7]{3,4}$ ]]; then
+        printf 'unreadable mode %s' "$mode"
+        return 0
+    fi
+    if (( (8#$mode & 0011) == 0 )); then
+        printf 'mode %s does not let a non-owner traverse it' "$mode"
+        return 0
+    fi
+    acl_deny_problem "$path"
+}
+
+# GridPane puts "group:GridPane-System-Users:---" on /opt. A named ACE for a
+# group the site user belongs to overrides the permission bits, so a 0755
+# directory still denies traversal. Mode checks alone cannot see that.
+acl_deny_problem() {
+    local path=$1
+    have getfacl || return 0
+    local line
+    while IFS= read -r line; do
+        case $line in
+            user::*|group::*|mask::*|other::*|default:*) continue ;;
+        esac
+        if [[ $line =~ ^(user|group):[^:]+:-+$ ]]; then
+            printf 'ACL entry "%s" overrides the mode and grants nothing' "$line"
+            return 0
+        fi
+    done < <(getfacl -p -- "$path" 2>/dev/null || true)
+    return 0
+}
+
+assert_prefix_access() {
+    # Fail on the default prefix, warn on a caller-chosen one: a custom tree is
+    # the caller's decision, but a broken default must not be reported as OK.
+    local problems=() p problem dir
+    dir=$(dirname -- "$PREFIX")
+    while [[ -n $dir && $dir != "/" && $dir != "." ]]; do
+        if [[ -d $dir ]]; then
+            problem=$(path_traverse_problem "$dir")
+            [[ -n $problem ]] && problems+=("$dir: $problem")
+        fi
+        dir=$(dirname -- "$dir")
+    done
+    for p in "$@"; do
+        problem=$(path_access_problem "$p")
+        [[ -n $problem ]] && problems+=("$p: $problem")
+    done
+    (( ${#problems[@]} == 0 )) && return 0
+
+    local detail
+    detail=$(printf '%s; ' "${problems[@]}")
+    detail=${detail%; }
+    if (( PREFIX_EXPLICIT )); then
+        warn "site users may not be able to load this runtime: $detail"
+        return 0
+    fi
+    error "site users cannot load this runtime: $detail"
+    die "repair the reported ownership/mode/ACL yourself; heic-fix.sh does not relax permissions"
+}
+
+assert_runtime_access() {
+    local paths=("$PREFIX") f
+    for f in "$IMAGEMAGICK"/lib/*.so* "$HEIF"/lib/*.so* "$PHPROOT"/*/imagick.so; do
+        [[ -e $f ]] && paths+=("$f")
+    done
+    assert_prefix_access "${paths[@]}"
 }
 
 get_recorded() {
@@ -1936,6 +2086,7 @@ build_imagick() {
     install -m 0755 "$built" "$(imagick_so "$ver")"
 
     verify_imagick_linkage "$ver"
+    assert_runtime_access
     record_version "IMAGICK_VERSION_$ver" "$RESOLVED_IMAGICK"
     record_version "IMAGICK_BUILD_REV_$ver" "$IMAGICK_BUILD_REV"
     record_version "IMAGICK_IM_FOR_$ver" "$(get_recorded "IMAGEMAGICK_VERSION")"
@@ -2159,6 +2310,7 @@ cmd_build() {
     fi
     libheif_decode_sample "$SAMPLE" "$state"
     imagemagick_decode_sample "$SAMPLE" "$state"
+    assert_runtime_access
 
     printf '\n%sBuild complete%s\n' "$C_GREEN" "$C_RESET"
     printf '  libheif       : %s\n' "$(get_recorded LIBHEIF_VERSION)"
@@ -2249,6 +2401,7 @@ cmd_enable() {
     fi
 
     local ver
+    assert_runtime_access
     for ver in "${targets[@]}"; do
         [[ -f $(imagick_so "$ver") ]] || die "missing $(imagick_so "$ver"); run: $SCRIPT_NAME php --php $ver"
         if confirm "Enable imagick-heic for PHP $ver and reload php$ver-fpm?"; then
@@ -2589,10 +2742,12 @@ parse_args() {
             --prefix)
                 [[ $# -ge 2 ]] || die "--prefix requires a directory"
                 PREFIX=$2
+                PREFIX_EXPLICIT=1
                 shift 2
                 ;;
             --prefix=*)
                 PREFIX=${1#*=}
+                PREFIX_EXPLICIT=1
                 shift
                 ;;
             --sample)
@@ -2654,6 +2809,7 @@ main() {
     detect_platform
     load_versions
     init_paths
+    legacy_prefix_hint
 
     local rc=0
     case $COMMAND in
