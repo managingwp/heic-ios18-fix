@@ -22,7 +22,7 @@ description: All heic-fix.sh commands, options, exit codes and quiet output.
 
 | Option | Meaning |
 | --- | --- |
-| `--php X.Y` | Target PHP version. Repeatable. Default: every version under `/etc/php`. |
+| `--php X.Y` | Target PHP version. Repeatable. `--php all` (or no `--php`) targets every version under `/etc/php`. |
 | `--prefix DIR` | Install prefix. Default `/usr/local/lib/heic-ios18-fix`, which every site user can read. A prefix under `/opt` or `/root` is usually unreadable by PHP-FPM users; the script warns instead of failing when you choose one. |
 | `--sample FILE` | HEIC used to prove decoding. Default `samples/failure_magick.HEIC`. |
 | `--system-libde265` | Link against the distro libde265 instead of building one. |
@@ -97,6 +97,9 @@ sudo ./heic-fix.sh php --php 8.3
 
 # Several versions, no prompts
 sudo ./heic-fix.sh php --php 8.1 --php 8.2 --php 8.3 -y
+
+# Every installed version
+sudo ./heic-fix.sh php --php all -y
 
 # Verify with a real photo
 sudo ./heic-fix.sh verify --php 8.3 --sample /path/to/photo.HEIC

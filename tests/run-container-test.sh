@@ -412,6 +412,12 @@ main() {
     [[ $rc -eq 1 ]] || fail "check should report AFFECTED (exit 1), got $rc"
     assert_contains "$out" "AFFECTED" "check output"
 
+    log "check before the fix with --php all (expect AFFECTED)"
+    rc=0
+    out=$("$REPO/heic-fix.sh" check -q --php all --sample "$SAMPLE" 2>&1) || rc=$?
+    printf '%s\n' "$out" >&2
+    [[ $rc -eq 1 ]] || fail "check --php all should report AFFECTED (exit 1), got $rc"
+
     log "build"
     "$REPO/heic-fix.sh" build -y --jobs "$JOBS" --sample "$SAMPLE"
 
@@ -436,6 +442,8 @@ main() {
 
     log "verify (CLI + FPM, with GD loaded)"
     "$REPO/heic-fix.sh" verify --php "$PHP_VER" --sample "$SAMPLE"
+    log "verify with --php all"
+    "$REPO/heic-fix.sh" verify --php all --sample "$SAMPLE"
     assert_ldd_isolation
     assert_decode_with_gd
 

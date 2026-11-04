@@ -147,7 +147,8 @@ COMMANDS
   deps                  Show build dependency status.
 
 OPTIONS
-  --php X.Y             Target PHP version (repeatable). Default: all installed.
+  --php X.Y|all         Target PHP version (repeatable), or "all" for every
+                        installed version. Default: all installed.
   --prefix DIR          Install prefix (default: /usr/local/lib/heic-ios18-fix).
                         The default is readable by every site user; a prefix
                         under /opt or /root usually is not.
@@ -768,8 +769,23 @@ resolve_versions() {
     fi
 }
 
+# Resolves --php into the version list every command iterates. "all" expands to
+# every installed version; explicit versions are kept alongside it, and the
+# union is deduplicated so "--php all --php 8.3" is harmless.
 requested_targets() {
-    if (( ${#PHP_TARGETS[@]} )); then
+    local v want_all=0
+    for v in "${PHP_TARGETS[@]}"; do
+        [[ $v == all ]] && want_all=1
+    done
+
+    if (( want_all )); then
+        {
+            php_versions
+            for v in "${PHP_TARGETS[@]}"; do
+                [[ $v == all ]] || printf '%s\n' "$v"
+            done
+        } | sort -Vu
+    elif (( ${#PHP_TARGETS[@]} )); then
         printf '%s\n' "${PHP_TARGETS[@]}"
     else
         php_versions
@@ -779,8 +795,9 @@ requested_targets() {
 validate_php_targets() {
     local v
     for v in "${PHP_TARGETS[@]}"; do
+        [[ $v == all ]] && continue
         if [[ ! $v =~ ^[0-9]+\.[0-9]+$ ]]; then
-            die "invalid --php version '$v' (expected X.Y)"
+            die "invalid --php version '$v' (expected X.Y or all)"
         fi
     done
 }

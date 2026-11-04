@@ -78,7 +78,8 @@ expensive libraries are compiled once. Each PHP ABI gets its own Imagick
 Scoping matters: `check` and `verify` without `--php` inspect **every**
 installed version. A version that was never built will still report stock
 ImageMagick 6. Use `--php` in monitoring and verification if only some versions
-are in use.
+are in use, or `--php all` to make "every installed version" explicit in a
+command you keep.
 
 ## Ubuntu 26.04 and newer
 

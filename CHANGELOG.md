@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+* `--php all` for `check`, `php`, `enable`, `rollback` and `verify`: targets
+  every installed PHP version explicitly, instead of listing each one or
+  relying on the implicit default. Combined with explicit versions it
+  deduplicates (`--php all --php 8.3`).
 * `check`, `verify` and the pre-flight now report `linkage=` and require
   `static-hidden`: the private libheif is linked into `libMagickCore` with
   hidden symbols. A prefix that still depends on a shared libheif is reported
