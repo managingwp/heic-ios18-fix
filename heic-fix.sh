@@ -583,8 +583,10 @@ path_access_problem() {
         return 0
     fi
     local owner mode
-    owner=$(stat -c '%u' -- "$path" 2>/dev/null) || { printf 'stat failed'; return 0; }
-    mode=$(stat -c '%a' -- "$path" 2>/dev/null) || { printf 'stat failed'; return 0; }
+    # -L: a symlinked library is only as safe as its target. Plain stat reports
+    # every symlink as mode 777, which would reject a correct installation.
+    owner=$(stat -L -c '%u' -- "$path" 2>/dev/null) || { printf 'stat failed'; return 0; }
+    mode=$(stat -L -c '%a' -- "$path" 2>/dev/null) || { printf 'stat failed'; return 0; }
     if [[ ! $mode =~ ^[0-7]{3,4}$ ]]; then
         printf 'unreadable mode %s' "$mode"
         return 0
@@ -612,7 +614,7 @@ path_access_problem() {
 path_traverse_problem() {
     local path=$1
     local mode
-    mode=$(stat -c '%a' -- "$path" 2>/dev/null) || { printf 'stat failed'; return 0; }
+    mode=$(stat -L -c '%a' -- "$path" 2>/dev/null) || { printf 'stat failed'; return 0; }
     if [[ ! $mode =~ ^[0-7]{3,4}$ ]]; then
         printf 'unreadable mode %s' "$mode"
         return 0

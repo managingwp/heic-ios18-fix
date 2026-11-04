@@ -152,8 +152,8 @@ assert_ldd_isolation() {
 assert_nonowner_safe() {
     local path=$1 owner mode
     [[ -e $path ]] || fail "missing runtime path: $path"
-    owner=$(stat -c '%u' -- "$path") || fail "stat failed: $path"
-    mode=$(stat -c '%a' -- "$path") || fail "stat failed: $path"
+    owner=$(stat -L -c '%u' -- "$path") || fail "stat failed: $path"
+    mode=$(stat -L -c '%a' -- "$path") || fail "stat failed: $path"
     [[ $owner == "0" ]] || fail "$path is owned by uid $owner, expected root"
     (( (8#$mode & 0022) == 0 )) || fail "$path is group/other writable (mode $mode)"
     (( (8#$mode & 0044) != 0 )) || fail "$path is not readable by a non-owner (mode $mode)"

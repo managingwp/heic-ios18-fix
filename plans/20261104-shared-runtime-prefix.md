@@ -77,15 +77,19 @@
 **Goal:** Prove the default-prefix change, compatibility behavior, documentation, and production handoff are complete without executing the live migration.
 
 #### Tasks
-- [ ] Run `bash -n heic-fix.sh tests/*.sh` and `shellcheck -x heic-fix.sh tests/*.sh`; confirm no parse or ShellCheck findings.
-- [ ] Run the WordPress monitor's existing non-container fixture/probe tests and confirm seeded defaults, path containment, and allowlist behavior pass.
-- [ ] Run `bash .agents/skills/lmt-skills-docusaurus-sync/scripts/docs-drift.sh --check`, then—after explicit build approval—`npm run build` and `bash scripts/check-docs-search.sh`; confirm Docusaurus and generated search checks pass.
-- [ ] After explicit Docker/build approval, run the three existing Ubuntu/PHP container combinations with `--cpus=2 --memory=6g --memory-swap=6g`, `JOBS=2`, the required `opencode.project`/`opencode.started` labels and project-prefixed container names; log and stop every container per the global agent instructions. Do not launch all three concurrently.
-- [ ] Run `pgf test run 20261104-shared-runtime-prefix --dry-run` and `pgf check`; record every gated or unavailable test in `plans/tests.md` instead of silently skipping it.
+- [x] Run `bash -n heic-fix.sh tests/*.sh` and `shellcheck -x heic-fix.sh tests/*.sh`; confirm no parse or ShellCheck findings.
+- [x] Run the WordPress monitor's existing non-container fixture/probe tests and confirm seeded defaults, path containment, and allowlist behavior pass.
+- [x] Run `bash .agents/skills/lmt-skills-docusaurus-sync/scripts/docs-drift.sh --check`, then—after explicit build approval—`npm run build` and `bash scripts/check-docs-search.sh`; confirm Docusaurus and generated search checks pass.
+- [x] After explicit Docker/build approval, run the three existing Ubuntu/PHP container combinations through `tests/run-prefix-matrix.sh` with a 2-CPU and 4 GB memory ceiling (`--memory-swap` matched, so no swap), `JOBS=2`, the required `opencode.project`/`opencode.started` labels and project-prefixed container names; log and stop every container per the global agent instructions. Do not launch all three concurrently. The 4 GB ceiling is below the wrapper's 6 GB default because the host had ~7 GB available at execution time.
+- [x] Run `pgf test run 20261104-shared-runtime-prefix --dry-run` and `pgf check`; record every gated or unavailable test in `plans/tests.md` instead of silently skipping it.
 - [ ] **USER-ONLY / PRODUCTION / COMPILE — DO NOT EXECUTE AUTOMATICALLY:** On the target GridPane server, approve and run the bounded new-prefix build only after reviewing `nproc`, `MemTotal`, `SwapTotal`, and active containers. Budget at most 2 build jobs and a 6 GB memory ceiling, expect roughly 10–30 minutes, keep `/opt/heic-ios18-fix` intact, and do not combine this approval with PHP activation.
 - [ ] **USER-ONLY / PRODUCTION / PHP-FPM — DO NOT EXECUTE AUTOMATICALLY:** For each required PHP version, approve the module switch and FPM reload separately; verify as at least two real site users that `namei`, `test -r`, WP-CLI, Imagick-only decode, GD-first decode, and the application upload path succeed before proceeding to the next version. Record the results; do not claim client-site validation without user-supplied evidence.
 - [ ] **USER-ONLY / DESTRUCTIVE — DO NOT EXECUTE AUTOMATICALLY:** Removal of `/opt/heic-ios18-fix` is out of scope. If desired after a separate retention period, create a separately approved cleanup task with a fresh backup and proof that no ini, rpath, monitor setting, cron, Monit command, or service references the old prefix.
 - [ ] **Validation:** every automated command in `How to Test` exits 0; all current defaults point to `/usr/local/lib/heic-ios18-fix`; custom and legacy prefixes remain inspectable; multi-user runtime tests pass; production build, activation, real-site verification, and any legacy deletion remain explicitly outstanding until the user supplies evidence.
+
+**Evidence:** `tests/run-prefix-matrix.sh` passed all three cases (Ubuntu 22.04 PHP 8.3, Ubuntu 22.04 PHP 8.5, Ubuntu 24.04 PHP 8.3) at 2 CPUs / 4 GB / no swap; each proved root-owned, non-writable, non-owner-readable runtime paths, Imagick-only and GD-first decoding by two unrelated unprivileged users, and the access guard refusing an unreadable default prefix. No project containers remained.
+
+**Commit:** `pending` — `fix: resolve symlink modes in the site-user access guard`
 
 #### How to Test
 
