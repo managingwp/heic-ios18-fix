@@ -31,9 +31,14 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 REPO=${REPO:-$(dirname -- "$SCRIPT_DIR")}
 PHP_VER=${PHP_VER:-8.3}
 JOBS=${JOBS:-$(nproc 2>/dev/null || printf '2')}
-PREFIX=${PREFIX:-/opt/heic-ios18-fix}
+DEFAULT_PREFIX=/usr/local/lib/heic-ios18-fix
+PREFIX=${PREFIX:-$DEFAULT_PREFIX}
 SAMPLE=${SAMPLE:-/tmp/heic-fix-test.heic}
 COLLISION_SAMPLE=${COLLISION_SAMPLE:-$REPO/samples/failure_magick.HEIC}
+
+# Two accounts with different primary groups, standing in for ordinary site
+# users. Neither is added to root, www-data or any group that owns the prefix.
+TEST_USERS=(heicuser1 heicuser2)
 
 export NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 DEBIAN_FRONTEND=noninteractive
 
@@ -141,6 +146,61 @@ assert_ldd_isolation() {
     fi
 }
 
+# Root ownership, no group/other write, and readable/traversable by mode alone.
+# A site user is in neither root nor the installer's group, so mode bits that
+# only grant root are the same as no access at all.
+assert_nonowner_safe() {
+    local path=$1 owner mode
+    [[ -e $path ]] || fail "missing runtime path: $path"
+    owner=$(stat -c '%u' -- "$path") || fail "stat failed: $path"
+    mode=$(stat -c '%a' -- "$path") || fail "stat failed: $path"
+    [[ $owner == "0" ]] || fail "$path is owned by uid $owner, expected root"
+    (( (8#$mode & 0022) == 0 )) || fail "$path is group/other writable (mode $mode)"
+    (( (8#$mode & 0044) != 0 )) || fail "$path is not readable by a non-owner (mode $mode)"
+    if [[ -d $path ]]; then
+        (( (8#$mode & 0011) != 0 )) || fail "$path is not traversable by a non-owner (mode $mode)"
+    fi
+}
+
+# The whole runtime, not just imagick.so: MagickCore, libheif and every
+# dependency resolved inside the prefix must be openable by a non-owner.
+assert_runtime_permissions() {
+    local so="$PREFIX/php/$PHP_VER/imagick.so"
+    local -a paths=("$PREFIX" "$PREFIX/imagemagick" "$PREFIX/imagemagick/lib" \
+        "$PREFIX/heif/lib" "$PREFIX/php" "$PREFIX/php/$PHP_VER" "$so")
+    local p dep
+    printf 'Runtime permissions under %s\n' "$PREFIX" >&2
+    for p in "${paths[@]}"; do
+        assert_nonowner_safe "$p"
+    done
+    while IFS= read -r dep; do
+        [[ $dep == "$PREFIX"/* ]] || continue
+        assert_nonowner_safe "$dep"
+    done < <(env -u LD_PRELOAD ldd "$so" 2>/dev/null | awk '/=>/ { print $3 }' | sort -u)
+    printf '  all runtime paths are root-owned, non-writable and non-owner readable\n' >&2
+}
+
+# Deleting users is not required (the container is disposable) but creating them
+# is, and each must have exactly one group: its own.
+create_test_users() {
+    local user group
+    command -v runuser >/dev/null || fail "runuser not available"
+    for user in "${TEST_USERS[@]}"; do
+        if ! id -u "$user" >/dev/null 2>&1; then
+            group="grp-$user"
+            groupadd -f "$group" >/dev/null 2>&1 || true
+            useradd --create-home --shell /usr/sbin/nologin --gid "$group" "$user" \
+                || fail "could not create test user $user"
+        fi
+        local groups
+        groups=$(id -Gn "$user")
+        [[ $groups == "$user" || $groups == "grp-$user" ]] \
+            || fail "$user has unexpected supplemental groups: $groups"
+        printf 'test user %s: uid=%s groups=%s\n' \
+            "$user" "$(id -u "$user")" "$groups" >&2
+    done
+}
+
 php_extension_dir() {
     php"$PHP_VER" -r 'echo ini_get("extension_dir");'
 }
@@ -153,9 +213,10 @@ gd_extension_path() {
 }
 
 # Decode with an explicit extension load order. "-n" keeps the host ini out of
-# the comparison, so each mode loads exactly the extensions it names.
+# the comparison, so each mode loads exactly the extensions it names. An
+# optional user argument runs the same probe as that unprivileged account.
 run_php_decode() {
-    local sample=$1 mode=$2
+    local sample=$1 mode=$2 user=${3:-}
     local imagick_so="$PREFIX/php/$PHP_VER/imagick.so"
     local gd_so
     [[ -f $imagick_so ]] || fail "missing $imagick_so"
@@ -174,7 +235,7 @@ run_php_decode() {
             ;;
     esac
 
-    HEIC_PROBE_SAMPLE="$sample" php"$PHP_VER" "${args[@]}" -r '
+    local -a run=(env "HEIC_PROBE_SAMPLE=$sample" "php$PHP_VER" "${args[@]}" -r '
         if (!extension_loaded("imagick")) { fwrite(STDERR, "imagick not loaded\n"); exit(1); }
         printf("gd=%s ", extension_loaded("gd") ? "yes" : "no");
         $im = new Imagick(getenv("HEIC_PROBE_SAMPLE"));
@@ -182,7 +243,13 @@ run_php_decode() {
         $blob = $im->getImageBlob();
         if (strlen($blob) < 100) { fwrite(STDERR, "decode produced no data\n"); exit(1); }
         printf("decode=ok %dx%d %d bytes\n", $im->getImageWidth(), $im->getImageHeight(), strlen($blob));
-    '
+    ')
+
+    if [[ -n $user ]]; then
+        runuser -u "$user" -- "${run[@]}"
+    else
+        "${run[@]}"
+    fi
 }
 
 assert_decode_with_gd() {
@@ -212,6 +279,27 @@ assert_decode_modes() {
         || fail "GD-first decode failed: $sample (a system libheif captured ImageMagick's heif_* calls)"
 
     printf 'All decode modes succeeded for %s\n' "$sample" >&2
+}
+
+# The production failure this guards: the extension exists and root can load it,
+# but the account PHP-FPM actually runs as cannot traverse the prefix. /opt on a
+# GridPane server looks like this because an ACL overrides the 0755 mode.
+assert_multiuser_decode() {
+    local sample=$COLLISION_SAMPLE user
+    [[ -f $sample ]] || fail "collision sample missing: $sample"
+    create_test_users
+    for user in "${TEST_USERS[@]}"; do
+        runuser -u "$user" -- test -x "$PREFIX" \
+            || fail "$user cannot traverse $PREFIX"
+        runuser -u "$user" -- test -r "$PREFIX/php/$PHP_VER/imagick.so" \
+            || fail "$user cannot read $PREFIX/php/$PHP_VER/imagick.so"
+        printf 'decoding as %s (uid %s)\n' "$user" "$(id -u "$user")" >&2
+        run_php_decode "$sample" imagick-only "$user" \
+            || fail "Imagick-only decode failed as $user: $sample"
+        run_php_decode "$sample" gd-first "$user" \
+            || fail "GD-first decode failed as $user: $sample"
+    done
+    printf 'Unprivileged users %s both decoded %s\n' "${TEST_USERS[*]}" "$sample" >&2
 }
 
 magickcore_real_path() {
@@ -342,6 +430,10 @@ main() {
     assert_hidden_heif_binding
     (( php_rc == 0 )) || fail "heic-fix.sh php failed (exit $php_rc)"
 
+    log "runtime permissions and multi-user decode ($PREFIX)"
+    assert_runtime_permissions
+    assert_multiuser_decode
+
     log "verify (CLI + FPM, with GD loaded)"
     "$REPO/heic-fix.sh" verify --php "$PHP_VER" --sample "$SAMPLE"
     assert_ldd_isolation
@@ -372,9 +464,32 @@ main() {
     run_expect 0 "$REPO/heic-fix.sh" check -q --php "$PHP_VER" --sample "$SAMPLE"
     "$REPO/heic-fix.sh" verify --php "$PHP_VER" --sample "$SAMPLE"
     assert_ldd_isolation
+    assert_runtime_permissions
+    assert_multiuser_decode
     assert_decode_with_gd
     assert_decode_modes
     assert_hidden_heif_binding
+
+    log "negative control: an unreadable default prefix must refuse to enable"
+    if [[ $PREFIX == "$DEFAULT_PREFIX" ]]; then
+        local guard_log guard_rc=0
+        guard_log=$(mktemp)
+        chmod 0700 "$PREFIX"
+        "$REPO/heic-fix.sh" enable --php "$PHP_VER" -y >"$guard_log" 2>&1 || guard_rc=$?
+        chmod 0755 "$PREFIX"
+        if (( guard_rc == 0 )); then
+            cat "$guard_log" >&2
+            rm -f "$guard_log"
+            fail "enable accepted a prefix that site users cannot read"
+        fi
+        grep -q 'site users' "$guard_log" \
+            || { cat "$guard_log" >&2; rm -f "$guard_log"; fail "the access guard did not explain the problem"; }
+        rm -f "$guard_log"
+        run_expect 0 "$REPO/heic-fix.sh" check -q --php "$PHP_VER" --sample "$SAMPLE"
+        printf 'access guard refused an unreadable prefix\n' >&2
+    else
+        printf 'SKIP: negative access control needs the default prefix (PREFIX=%s)\n' "$PREFIX" >&2
+    fi
 
     log "status"
     "$REPO/heic-fix.sh" status --php "$PHP_VER"
