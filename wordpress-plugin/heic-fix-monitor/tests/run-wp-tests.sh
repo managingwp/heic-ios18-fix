@@ -58,9 +58,9 @@ $s = Heic_Fix_Monitor_Settings::instance();
 $clean = $s->sanitize(
 	array(
 		"php_versions"   => "8.5, 8.5, bad, 8.3",
-		"prefix"         => "/opt/heic-ios18-fix/../etc",
+		"prefix"         => "/usr/local/lib/heic-ios18-fix/../etc",
 		"sample_path"    => "",
-		"check_binary"   => "/opt/heic-ios18-fix/heic-fix.sh",
+		"check_binary"   => "/usr/local/lib/heic-ios18-fix/heic-fix.sh",
 		"interval"       => "weekly",
 		"timeout"        => "9999",
 		"emails"         => "ops@example.test, not-an-email",
@@ -81,7 +81,7 @@ echo wp_json_encode(
 );
 ')
 assert_eq "$(printf '%s' "$sanitized" | php -r '$d=json_decode(stream_get_contents(STDIN), true); echo implode(",", $d["versions"]);')" "8.3,8.5" "PHP versions are validated and deduplicated"
-assert_eq "$(printf '%s' "$sanitized" | php -r '$d=json_decode(stream_get_contents(STDIN), true); echo $d["prefix"];')" "/opt/heic-ios18-fix" "parent-directory paths fall back to the previous value"
+assert_eq "$(printf '%s' "$sanitized" | php -r '$d=json_decode(stream_get_contents(STDIN), true); echo $d["prefix"];')" "/usr/local/lib/heic-ios18-fix" "parent-directory paths fall back to the previous value"
 assert_eq "$(printf '%s' "$sanitized" | php -r '$d=json_decode(stream_get_contents(STDIN), true); echo $d["interval"];')" "hourly" "unknown intervals fall back"
 assert_eq "$(printf '%s' "$sanitized" | php -r '$d=json_decode(stream_get_contents(STDIN), true); echo $d["timeout"];')" "30" "out-of-range numbers fall back"
 assert_eq "$(printf '%s' "$sanitized" | php -r '$d=json_decode(stream_get_contents(STDIN), true); echo implode(",", $d["emails"]);')" "ops@example.test" "invalid recipients are dropped"

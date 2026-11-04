@@ -41,10 +41,13 @@ NEW_DEFAULT="/usr/local/lib/heic-ios18-fix"
 # historical changelog/plan evidence, and this test.
 ALLOWED_FILES="
 heic-fix.sh
+docs/commands.md
+docs/how-it-works.md
 docs/troubleshooting.md
 docs/platforms/gridpane.md
 wordpress-plugin/heic-fix-monitor/docs/configuration.md
 wordpress-plugin/heic-fix-monitor/docs/architecture.md
+wordpress-plugin/heic-fix-monitor/includes/probes/class-heic-fix-monitor-check-probe.php
 CHANGELOG.md
 plans/20261028-wordpress-heic-monitor.md
 tests/check-default-prefix.sh

@@ -45,7 +45,7 @@ files, ini state and ELF linkage.
 define( 'HEIC_FIX_MONITOR_SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/...' );
 define( 'HEIC_FIX_MONITOR_GENERIC_WEBHOOK_URL', 'https://example.com/hooks/heic' );
 define( 'HEIC_FIX_MONITOR_GENERIC_WEBHOOK_TOKEN', '...' );
-define( 'HEIC_FIX_MONITOR_ALLOWED_CHECK_PATHS', array( '/opt/heic-ios18-fix/heic-fix.sh' ) );
+define( 'HEIC_FIX_MONITOR_ALLOWED_CHECK_PATHS', array( '/usr/local/lib/heic-ios18-fix/heic-fix.sh' ) );
 define( 'HEIC_FIX_MONITOR_ALLOWED_WEBHOOK_HOSTS', array( 'example.com' ) );
 ```
 
@@ -55,7 +55,7 @@ define( 'HEIC_FIX_MONITOR_ALLOWED_WEBHOOK_HOSTS', array( 'example.com' ) );
 
 No. It only reads files, runs `heic-fix.sh check` when allowed, and decodes
 the bundled sample in memory. It never runs `build`, `php`, `enable` or
-`rollback`, never writes to `/usr` or `/opt/heic-ios18-fix`, and never changes
+`rollback`, never writes to `/usr` or `/usr/local/lib/heic-ios18-fix`, and never changes
 PHP configuration.
 
 = Why did no email arrive for an `ok` result? =

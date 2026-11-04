@@ -44,7 +44,7 @@ The `undefined symbol` error is the GD trap described below.
 ## Prefix layout
 
 ```text
-/opt/heic-ios18-fix/
+/usr/local/lib/heic-ios18-fix/
 ├── heif/                        libde265 + libheif, private SONAMEs
 │   ├── bin/                     heif-dec, heif-info, heif-enc, ...
 │   └── lib/
@@ -72,6 +72,46 @@ the archives that are linked into ImageMagick, so the two roles stay separate.
 Nothing here shadows or replaces `/usr/lib`. The system ImageMagick and libheif
 remain available to other software.
 
+### Site user access
+
+PHP-FPM and WP-CLI run as the site's system user, which is neither root nor the
+installer. Every directory from the top of the prefix to `imagick.so`, and every
+private library it loads, therefore has to be readable through ordinary mode
+bits:
+
+```text
+drwxr-xr-x root root  /usr/local/lib/heic-ios18-fix
+drwxr-xr-x root root  .../php/8.3
+-rw-r--r-- root root  .../php/8.3/imagick.so
+```
+
+The default prefix was chosen for exactly this reason. GridPane ships `/opt`
+with an extra access control entry:
+
+```text
+# file: /opt
+user::rwx
+group::r-x
+group:GridPane-System-Users:---
+mask::r-x
+other::r-x
+```
+
+A named entry for a group the site user belongs to overrides `other::r-x`, so
+`/opt/heic-ios18-fix` stays unreadable even though `namei -l` prints `0755`.
+The failure is a PHP startup warning, not a decode error:
+
+```text
+PHP Warning:  PHP Startup: Unable to load dynamic library
+'/opt/heic-ios18-fix/php/8.2/imagick.so' (... cannot open shared object file:
+Permission denied)
+```
+
+`build`, `php` and `enable` check ownership, mode and ACLs before they report an
+installation as usable. With the default prefix they refuse to continue; with an
+explicit `--prefix` they warn, because that tree is the caller's choice. They
+never change permissions themselves.
+
 ## Per-PHP-version extension
 
 Imagick is a thin PHP extension over ImageMagick's MagickWand C API, so it must
@@ -81,7 +121,7 @@ requested PHP version and records the result:
 ```text
 /etc/php/8.3/mods-available/imagick-heic.ini
     ; priority=20
-    extension=/opt/heic-ios18-fix/php/8.3/imagick.so
+    extension=/usr/local/lib/heic-ios18-fix/php/8.3/imagick.so
 ```
 
 The stock `imagick.ini` is disabled with `phpdismod -v 8.3 imagick`, and
@@ -102,7 +142,7 @@ SONAMEs loaded both libheifs and produced this binding trace:
 
 ```text
 libMagickCore-7.Q16HDRI.so.10 → /lib/x86_64-linux-gnu/libheif.so.1  heif_context_alloc
-libMagickCore-7.Q16HDRI.so.10 → /opt/heic-ios18-fix/heif/lib/libheif-heicfix.so.1  heif_context_get_security_limits
+libMagickCore-7.Q16HDRI.so.10 → /usr/local/lib/heic-ios18-fix/heif/lib/libheif-heicfix.so.1  heif_context_get_security_limits
 libMagickCore-7.Q16HDRI.so.10 → /lib/x86_64-linux-gnu/libheif.so.1  heif_context_read_from_file
 libMagickCore-7.Q16HDRI.so.10 → /lib/x86_64-linux-gnu/libheif.so.1  heif_context_free
 ```
@@ -135,8 +175,8 @@ process.
 The resulting library has no shared libheif dependency at all:
 
 ```text
-$ readelf -d /opt/heic-ios18-fix/imagemagick/lib/libMagickCore-7.Q16HDRI.so.10 | grep -i heif
-$ ldd /opt/heic-ios18-fix/php/8.3/imagick.so | grep -i heif
+$ readelf -d /usr/local/lib/heic-ios18-fix/imagemagick/lib/libMagickCore-7.Q16HDRI.so.10 | grep -i heif
+$ ldd /usr/local/lib/heic-ios18-fix/php/8.3/imagick.so | grep -i heif
 ```
 
 Both commands print nothing. `check`, `verify` and the pre-flight report

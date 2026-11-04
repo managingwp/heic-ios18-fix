@@ -354,7 +354,10 @@ final class Heic_Fix_Monitor_Check_Probe implements Heic_Fix_Monitor_Probe_Inter
 			return false;
 		}
 
-		$allowlist = array( '/opt/heic-ios18-fix/heic-fix.sh' );
+		// The default install location. A legacy /opt/heic-ios18-fix build has
+		// to be allowlisted explicitly: its extension is not readable by site
+		// users, so accepting it silently would hide the real problem.
+		$allowlist = array( '/usr/local/lib/heic-ios18-fix/heic-fix.sh' );
 		if ( defined( 'HEIC_FIX_MONITOR_ALLOWED_CHECK_PATHS' ) ) {
 			$constant = constant( 'HEIC_FIX_MONITOR_ALLOWED_CHECK_PATHS' );
 			if ( is_array( $constant ) ) {

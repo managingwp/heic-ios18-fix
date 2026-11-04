@@ -5,9 +5,14 @@ servers — without replacing system libraries, upgrading the distribution, or
 changing PHP versions.
 
 The script builds a private libde265, libheif and ImageMagick 7 into
-`/opt/heic-ios18-fix`, then builds a matching Imagick extension for each PHP
+`/usr/local/lib/heic-ios18-fix`, then builds a matching Imagick extension for each PHP
 version you choose. The system ImageMagick, libheif, PHP packages and
 `/usr/lib` stay exactly as the distribution shipped them.
+
+The prefix is readable by every site user, so PHP-FPM and WP-CLI can load the
+extension under the account they actually run as. A prefix under `/opt` is not a
+safe default: GridPane's `/opt` ACL denies its site-user group, which turns a
+correct build into `Permission denied` at PHP startup.
 
 - License: MIT
 - Tested in containers: Ubuntu 22.04/24.04 (workaround) and Ubuntu 26.04
@@ -42,6 +47,8 @@ sudo ./heic-fix.sh rollback --php 8.3
   `heif_*` calls. Private SONAMEs (`libheif-heicfix.so.1`,
   `libde265-heicfix.so.0`) remain for the shared diagnostic tools.
 - Builds one Imagick extension per PHP ABI and runs a pre-flight with GD loaded.
+- Installs to a prefix every site user can read, and refuses to report an
+  unreadable installation as usable.
 - Provides `check`, `build`, `php`, `enable`, `rollback`, `verify`, `status` and
   `deps`; detects GridPane and marks RunCloud PHP wiring `TODO(runcloud)`.
 

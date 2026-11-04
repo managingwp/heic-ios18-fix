@@ -43,7 +43,9 @@ sudo ./heic-fix.sh verify --php 8.3
 ```
 
 `build` installs the documented build packages with needrestart disabled and
-compiles into `/opt/heic-ios18-fix`. It does not touch `/usr`.
+compiles into `/usr/local/lib/heic-ios18-fix`. Distribution packages and
+`/usr/lib` are untouched; only a new directory tree under `/usr/local/lib` is
+created.
 
 `php` will:
 
@@ -54,6 +56,30 @@ compiles into `/opt/heic-ios18-fix`. It does not touch `/usr`.
 4. ask before writing `mods-available/imagick-heic.ini`, disabling stock
    imagick, and reloading `php8.3-fpm`.
 
+## Why the prefix is not in `/opt`
+
+GridPane protects `/opt` with an access control entry for its own groups:
+
+```text
+# file: /opt
+group:GridPane-System-Users:---
+```
+
+Site users belong to `GridPane-System-Users`, and a named ACL entry overrides
+`other::r-x`. An installation in `/opt/heic-ios18-fix` therefore looks perfectly
+readable to root and to `namei -l` (which prints `0755`) but cannot be traversed
+by the accounts PHP-FPM and WP-CLI run as. PHP fails at startup:
+
+```text
+PHP Warning:  PHP Startup: Unable to load dynamic library
+'/opt/heic-ios18-fix/php/8.2/imagick.so' (... Permission denied)
+```
+
+That is why the default prefix is `/usr/local/lib/heic-ios18-fix`. Do not remove
+the ACL or grant the whole `GridPane-System-Users` group access to `/opt`; move
+the installation instead. If you already have a build in `/opt`, follow
+[Migrate an existing installation](../troubleshooting.md#migrate-an-existing-optheic-ios18-fix-installation).
+
 ## After GridPane updates
 
 GridPane stack and security updates can:
@@ -62,7 +88,7 @@ GridPane stack and security updates can:
 * re-enable the stock `imagick` module,
 * upgrade or downgrade system ImageMagick/libheif.
 
-They do not remove `/opt/heic-ios18-fix`. After every update run:
+They do not remove `/usr/local/lib/heic-ios18-fix`. After every update run:
 
 ```bash
 sudo ./heic-fix.sh check

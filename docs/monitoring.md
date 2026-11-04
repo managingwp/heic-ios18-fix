@@ -10,6 +10,10 @@ description: Cron, monit and alerting examples for heic-fix.sh check.
 `check` is read-only and safe to run as often as you like. It never installs,
 builds or enables anything.
 
+The examples below assume the repository is checked out at the install prefix,
+`/usr/local/lib/heic-ios18-fix`. Substitute wherever `heic-fix.sh` actually
+lives; only the command and its arguments matter.
+
 ## Exit codes
 
 | Code | Meaning | Typical action |
@@ -45,7 +49,7 @@ Fields are stable: `status`, `imagick`, `imagemagick` (major), `heic`, `libheif`
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-*/30 * * * * root out=$(/opt/heic-ios18-fix/heic-fix.sh check -q --php 8.3 2>&1); rc=$?; if [ "$rc" -ne 0 ]; then printf '%s\n' "$out" | mail -s "HEIC check on $(hostname): rc=$rc" ops@example.com; fi
+*/30 * * * * root out=$(/usr/local/lib/heic-ios18-fix/heic-fix.sh check -q --php 8.3 2>&1); rc=$?; if [ "$rc" -ne 0 ]; then printf '%s\n' "$out" | mail -s "HEIC check on $(hostname): rc=$rc" ops@example.com; fi
 ```
 
 This is completely silent when `check` exits 0. If it exits 1 (AFFECTED), 2
@@ -58,7 +62,7 @@ A wrapper can separate the alert text:
 # /usr/local/bin/heic-check-alert
 set -Eeuo pipefail
 
-out=$(/opt/heic-ios18-fix/heic-fix.sh check -q --php 8.3 2>&1) || rc=$?
+out=$(/usr/local/lib/heic-ios18-fix/heic-fix.sh check -q --php 8.3 2>&1) || rc=$?
 rc=${rc:-0}
 
 if (( rc == 0 )); then
@@ -85,7 +89,7 @@ Test it manually:
 ## Monit
 
 ```monit
-check program heic-fix with path "/opt/heic-ios18-fix/heic-fix.sh check -q --php 8.3"
+check program heic-fix with path "/usr/local/lib/heic-ios18-fix/heic-fix.sh check -q --php 8.3"
     every 6 cycles
     if status != 0 then alert
 ```
@@ -94,7 +98,7 @@ Monit treats any non-zero exit as a failure. Add separate checks if you want
 different alert text for AFFECTED and ERROR:
 
 ```monit
-check program heic-fix with path "/opt/heic-ios18-fix/heic-fix.sh check -q --php 8.3"
+check program heic-fix with path "/usr/local/lib/heic-ios18-fix/heic-fix.sh check -q --php 8.3"
     every 6 cycles
     if status = 1 then alert
     if status = 2 then alert
@@ -106,7 +110,7 @@ check program heic-fix with path "/opt/heic-ios18-fix/heic-fix.sh check -q --php
 Extract a single value:
 
 ```bash
-/opt/heic-ios18-fix/heic-fix.sh check -q --php 8.3 \
+/usr/local/lib/heic-ios18-fix/heic-fix.sh check -q --php 8.3 \
   | sed -n 's/.*status=\([a-z-]*\).*/\1/p'
 ```
 
@@ -120,15 +124,15 @@ restores stock imagick or upgrades the system libraries. When `check` flips to
 AFFECTED:
 
 ```bash
-sudo /opt/heic-ios18-fix/heic-fix.sh enable --php 8.3
-sudo /opt/heic-ios18-fix/heic-fix.sh verify --php 8.3
+sudo /usr/local/lib/heic-ios18-fix/heic-fix.sh enable --php 8.3
+sudo /usr/local/lib/heic-ios18-fix/heic-fix.sh verify --php 8.3
 ```
 
 If `verify` fails, rebuild:
 
 ```bash
-sudo /opt/heic-ios18-fix/heic-fix.sh build
-sudo /opt/heic-ios18-fix/heic-fix.sh php --php 8.3
+sudo /usr/local/lib/heic-ios18-fix/heic-fix.sh build
+sudo /usr/local/lib/heic-ios18-fix/heic-fix.sh php --php 8.3
 ```
 
 On Ubuntu 26.04, do not rebuild. Install `libheif-plugin-libde265` instead; see

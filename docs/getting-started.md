@@ -45,6 +45,22 @@ sudo ./heic-fix.sh verify --php 8.3
 Add `-y` to skip prompts. Add `--sample /path/to/photo.HEIC` to test a specific
 photo instead of `samples/failure_magick.HEIC`.
 
+## Where it installs
+
+`build` compiles into `/usr/local/lib/heic-ios18-fix` by default. That path
+matters: the extension is loaded by PHP-FPM and WP-CLI as the site's system
+user, so every site user has to be able to read it. The default prefix is world
+readable and root owned; nothing under it is writable by a site user.
+
+`build`, `php` and `enable` check that before they report success and stop with
+the exact directory, mode or ACL that blocks a site user. Use `--prefix DIR` if
+you need a different location, and expect a warning when that location is not
+readable by site users.
+
+A prefix under `/opt` is a common trap: GridPane's `/opt` ACL denies its
+site-user group even though the directory mode is `0755`. See
+[Troubleshooting](troubleshooting.md#permission-denied-loading-imagickso).
+
 ## Which PHP versions?
 
 `check` prints a best-effort site → PHP map from the FPM pool files. Build and
@@ -83,7 +99,7 @@ sudo ./heic-fix.sh rollback --php 8.3
 ```
 
 Rollback re-enables stock `imagick` for that PHP version and reloads FPM. The
-private build stays in `/opt/heic-ios18-fix`, so `enable --php 8.3` restores it
+private build stays in `/usr/local/lib/heic-ios18-fix`, so `enable --php 8.3` restores it
 without rebuilding.
 
 ## Uninstall
@@ -91,7 +107,7 @@ without rebuilding.
 After rolling back every version:
 
 ```bash
-sudo rm -rf /opt/heic-ios18-fix
+sudo rm -rf /usr/local/lib/heic-ios18-fix
 sudo rm -f /etc/php/8.3/mods-available/imagick-heic.ini
 ```
 

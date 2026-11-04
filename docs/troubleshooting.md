@@ -114,6 +114,194 @@ Verify with:
 sha256sum /tmp/pcre2-sury/*.deb
 ```
 
+## `Permission denied` loading `imagick.so`
+
+### Symptom
+
+PHP fails at startup, before any site code runs:
+
+```text
+PHP Warning:  PHP Startup: Unable to load dynamic library
+'/opt/heic-ios18-fix/php/8.2/imagick.so' (tried:
+/opt/heic-ios18-fix/php/8.2/imagick.so (... Permission denied), ...)
+in Unknown on line 0
+```
+
+`php -m` has no `imagick`, `wp` prints the same warning, and the second path in
+the message (`.../imagick.so.so`) is only PHP falling back after the first
+failure.
+
+### Cause
+
+The account running PHP cannot traverse or read the prefix. The usual reason on
+GridPane is an ACL entry on `/opt`:
+
+```text
+# file: /opt
+user::rwx
+group::r-x
+group:GridPane-System-Users:---
+mask::r-x
+other::r-x
+```
+
+Site users are members of `GridPane-System-Users`, and a named ACL entry takes
+precedence over `other::r-x`, so `/opt/heic-ios18-fix` is unreachable even though
+its mode is `0755`. `ls -l` and `namei -l` show the mode, not the ACL.
+
+### Confirm it
+
+Run this as the site user, not as root:
+
+```bash
+id
+namei -l /opt/heic-ios18-fix/php/8.2/imagick.so
+test -r /opt/heic-ios18-fix/php/8.2/imagick.so \
+    && echo "extension readable" || echo "extension NOT readable"
+php8.2 -r 'echo extension_loaded("imagick") ? "loaded\n" : "not loaded\n";'
+```
+
+`namei` stops at the first component the user cannot enter. To see why, as root:
+
+```bash
+getfacl -p /opt
+namei -l /usr/local/lib/heic-ios18-fix/php/8.2/imagick.so
+```
+
+### Fix
+
+The supported fix is to install under the default prefix, which every site user
+can read:
+
+```bash
+cd ~/heic-ios18-fix
+sudo ./heic-fix.sh build          # compiles into /usr/local/lib/heic-ios18-fix
+sudo ./heic-fix.sh php --php 8.2  # decline the enable prompt for now
+```
+
+Then follow [Migrate an existing
+installation](#migrate-an-existing-optheic-ios18-fix-installation). The old build
+stays where it is; nothing is copied or deleted.
+
+A single-account exception is possible but broader than it looks:
+
+```bash
+sudo setfacl -m u:<site-user>:x /opt
+```
+
+That grants traverse rights on the whole of `/opt`, not just this installation,
+so the hosting administrator has to own that decision. Restrict it with a named
+user, never by removing the group entry or granting `GridPane-System-Users`
+access to `/opt`.
+
+Additional directories and files must be reachable too. Add execute (x) for each
+directory the user cannot enter and read (r) for the files it must read, then
+prove it as the site user rather than as root.
+
+## Migrate an existing `/opt/heic-ios18-fix` installation
+
+The extension and `libMagickCore` embed absolute paths, so an installation
+cannot be moved by copying files or repointing a symlink. Rebuild at the new
+prefix instead.
+
+### 1. Record the current state
+
+```bash
+sudo /path/to/heic-fix.sh status --prefix /opt/heic-ios18-fix
+sudo cp /opt/heic-ios18-fix/installed-versions.txt \
+    /root/heic-ios18-fix-versions-$(date +%F).txt
+sudo cp /etc/php/8.3/mods-available/imagick-heic.ini \
+    /root/imagick-heic-8.3-$(date +%F).ini
+```
+
+Repeat the ini copy for every PHP version you have enabled. `status` lists the
+built extensions; `grep -l heic-ios18-fix /etc/php/*/mods-available/*.ini` finds
+the ini files. The legacy build keeps working during the migration.
+
+### 2. Size the rebuild
+
+```bash
+nproc
+free -g
+docker ps -q | wc -l
+```
+
+A clean build needs roughly 1–2 GB of disk. Cap the job count so the compile
+cannot take the whole host:
+
+```bash
+sudo ./heic-fix.sh build --jobs 2
+```
+
+### 3. Build the extension without enabling it
+
+```bash
+sudo ./heic-fix.sh php --php 8.3
+```
+
+Answer **no** when it offers to enable the extension. Do not pass `-y`: that
+answers yes to the module switch and the FPM reload.
+
+### 4. Test as a real site user
+
+Choose an account that owns a site on this PHP version, not root:
+
+```bash
+id
+namei -l /usr/local/lib/heic-ios18-fix/php/8.3/imagick.so
+php8.3 -n -d extension=/usr/local/lib/heic-ios18-fix/php/8.3/imagick.so \
+    -r 'echo Imagick::getVersion()["versionString"], "\n";'
+```
+
+Repeat with GD loaded first, which is the production order:
+
+```bash
+gd=$(php8.3 -r 'echo ini_get("extension_dir");')/gd.so
+php8.3 -n -d extension="$gd" \
+    -d extension=/usr/local/lib/heic-ios18-fix/php/8.3/imagick.so \
+    -r '$i = new Imagick($argv[1]); $i->setImageFormat("jpeg");
+        printf("bytes=%d\n", strlen($i->getImageBlob()));' \
+    /path/to/photo.HEIC
+```
+
+If either command fails with `Permission denied`, stop: fix access on the new
+prefix before switching anything.
+
+### 5. Switch one PHP version at a time
+
+```bash
+sudo ./heic-fix.sh enable --php 8.3
+sudo ./heic-fix.sh verify --php 8.3
+sudo -u <site-user> php8.3 -r 'echo Imagick::getVersion()["versionString"], "\n";'
+```
+
+`enable` writes `/etc/php/8.3/mods-available/imagick-heic.ini`, disables stock
+`imagick` and reloads `php8.3-fpm`. Every site on that PHP version is affected,
+so confirm one version before moving to the next. Check a real upload after the
+reload.
+
+### 6. Keep the old prefix until you are sure
+
+`/opt/heic-ios18-fix` is not touched by any of the steps above. Keep it for at
+least one release cycle in case you need to compare behaviour, and remember that
+its modules are not readable by site users, so re-enabling it means going back
+to stock Imagick:
+
+```bash
+sudo ./heic-fix.sh rollback --php 8.3
+```
+
+`rollback` re-enables stock `imagick` and reloads FPM; it does not restore the
+legacy prefix and it does not delete anything.
+
+Removing `/opt/heic-ios18-fix` is a separate, deliberate action. Before you do,
+prove nothing still points at it:
+
+```bash
+grep -R /opt/heic-ios18-fix /etc/php/*/mods-available /etc/php/*/conf.d \
+    /etc/cron.d /etc/monit /etc/monit.d 2>/dev/null
+```
+
 ## `verify` fails with stock ImageMagick 6
 
 Run the PHP step first:
@@ -123,7 +311,7 @@ Run the PHP step first:
 ```
 
 `build` only compiles libde265, libheif and ImageMagick 7. It does not create
-`/opt/heic-ios18-fix/php/8.3/imagick.so`; `php` does that and enables it.
+`/usr/local/lib/heic-ios18-fix/php/8.3/imagick.so`; `php` does that and enables it.
 
 ## Decoding fails only when GD is loaded
 
@@ -154,14 +342,14 @@ the system libheif. Known to happen on Ubuntu 22.04 with PHP 8.5.
 cd ~/heic-ios18-fix
 
 # 1. Private CLI — proves the build itself is fine
-/opt/heic-ios18-fix/imagemagick/bin/magick samples/failure_magick.HEIC[0] null:
+/usr/local/lib/heic-ios18-fix/imagemagick/bin/magick samples/failure_magick.HEIC[0] null:
 
 # 2. Imagick alone and GD first — the split identifies symbol capture
 for mode in imagick-only gd-first; do
     printf '\n=== %s ===\n' "$mode"
     args=(-n)
     [[ $mode == gd-first ]] && args+=(-d extension=gd.so)
-    php8.5 "${args[@]}" -d extension=/opt/heic-ios18-fix/php/8.5/imagick.so \
+    php8.5 "${args[@]}" -d extension=/usr/local/lib/heic-ios18-fix/php/8.5/imagick.so \
         -r '$im = new Imagick($argv[1]); $im->setImageFormat("jpeg");
             printf("bytes=%d\n", strlen($im->getImageBlob()));' \
         samples/failure_magick.HEIC
@@ -169,7 +357,7 @@ done
 
 # 3. Show which library each call binds to
 LD_DEBUG=bindings php8.5 -n -d extension=gd.so \
-    -d extension=/opt/heic-ios18-fix/php/8.5/imagick.so \
+    -d extension=/usr/local/lib/heic-ios18-fix/php/8.5/imagick.so \
     -r '$im = new Imagick($argv[1]); $im->setImageFormat("jpeg"); $im->getImageBlob();' \
     samples/failure_magick.HEIC 2>&1 |
     grep -E 'binding file .*libMagickCore.* to .*libheif'

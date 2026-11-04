@@ -211,7 +211,7 @@ Rules:
 - The binary must be an absolute, executable, readable regular file.
 - `heic-fix.sh` must resolve with `realpath()` and match an entry in
   `HEIC_FIX_MONITOR_ALLOWED_CHECK_PATHS`; the default allowlist contains
-  `/opt/heic-ios18-fix/heic-fix.sh`.
+  `/usr/local/lib/heic-ios18-fix/heic-fix.sh`.
 - PHP versions must match `^[0-9]+\.[0-9]+$`.
 - Arguments are passed to `proc_open()` as an array (no shell). The audit string
   uses `escapeshellarg()` for every argument.

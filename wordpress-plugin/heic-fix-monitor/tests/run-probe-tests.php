@@ -53,7 +53,7 @@ hfm_assert( 'affected' === Heic_Fix_Monitor_Check_Probe::map_exit( 3 ), 'maps ex
 hfm_assert( 'error' === Heic_Fix_Monitor_Check_Probe::map_exit( 42 ), 'maps unknown exits to error' );
 
 hfm_assert( false === Heic_Fix_Monitor_Check_Probe::is_allowed_binary( '/tmp/evil/heic-fix.sh' ), 'rejects an unallowlisted binary' );
-hfm_assert( false === Heic_Fix_Monitor_Check_Probe::is_allowed_binary( '/opt/heic-ios18-fix/other.sh' ), 'rejects a different script name' );
+hfm_assert( false === Heic_Fix_Monitor_Check_Probe::is_allowed_binary( '/usr/local/lib/heic-ios18-fix/other.sh' ), 'rejects a different script name' );
 
 $tmp = sys_get_temp_dir() . '/hfm-probe-' . getmypid();
 mkdir( $tmp, 0700, true );

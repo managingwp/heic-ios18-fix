@@ -22,9 +22,9 @@ Open **Settings → HEIC Fix Monitor** for status and manual actions, and
 | Setting | Default | Notes |
 | --- | --- | --- |
 | PHP versions | empty | Comma-separated `X.Y`. Empty checks the PHP version serving the request. |
-| Install prefix | `/opt/heic-ios18-fix` | Absolute path, read-only. |
+| Install prefix | `/usr/local/lib/heic-ios18-fix` | Absolute path, read-only. |
 | Sample path | empty | Empty uses the bundled, checksum-verified iOS 18 sample. A custom path must be an absolute `.heic`/`.heif` file. |
-| `heic-fix.sh` path | `/opt/heic-ios18-fix/heic-fix.sh` | Must resolve to an allowlisted `heic-fix.sh`. |
+| `heic-fix.sh` path | `/usr/local/lib/heic-ios18-fix/heic-fix.sh` | Must resolve to an allowlisted `heic-fix.sh`. |
 | Interval | hourly | 15 minutes, 30 minutes, hourly, 6 hours or daily. |
 | Command timeout | 30 s | Applies to `check` and ELF tools. |
 | Minimum decode interval | 300 s | Cron runs skip a second decode inside this window. |
@@ -46,7 +46,9 @@ define( 'HEIC_FIX_MONITOR_GENERIC_WEBHOOK_URL', 'https://example.com/hooks/heic'
 define( 'HEIC_FIX_MONITOR_GENERIC_WEBHOOK_TOKEN', '...' );
 
 // Optional: allow a repository copy of the check script in addition to the
-// default /opt/heic-ios18-fix/heic-fix.sh.
+// default /usr/local/lib/heic-ios18-fix/heic-fix.sh. A legacy installation in
+// /opt/heic-ios18-fix must be added here explicitly; it is not accepted by
+// default, because its extension is not readable by site users.
 define( 'HEIC_FIX_MONITOR_ALLOWED_CHECK_PATHS', array( '/root/heic-ios18-fix/heic-fix.sh' ) );
 
 // Required for the generic JSON webhook: exact destination hostnames.

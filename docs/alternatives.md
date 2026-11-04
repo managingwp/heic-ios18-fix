@@ -10,12 +10,12 @@ description: Other ways to handle iOS 18 HEIC uploads.
 If this build is not a good fit:
 
 1. **Convert at upload.** Run the isolated `heif-dec` from
-   `/opt/heic-ios18-fix/heif/bin/heif-dec` and hand the resulting JPEG/PNG to
+   `/usr/local/lib/heic-ios18-fix/heif/bin/heif-dec` and hand the resulting JPEG/PNG to
    ImageMagick. This still needs this build (or another libheif ≥ 1.18.2), but
    avoids rebuilding Imagick.
 
    ```bash
-   /opt/heic-ios18-fix/heif/bin/heif-dec --quiet photo.heic photo.jpg
+   /usr/local/lib/heic-ios18-fix/heif/bin/heif-dec --quiet photo.heic photo.jpg
    ```
 
 2. **Decode in the browser** with a client-side WASM HEIC decoder before

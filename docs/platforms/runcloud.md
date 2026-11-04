@@ -10,7 +10,7 @@ description: RunCloud build support and unimplemented PHP wiring.
 RunCloud support is **partial**:
 
 * `build` works. It compiles libde265, libheif and ImageMagick 7 into
-  `/opt/heic-ios18-fix` using the normal Debian/Ubuntu toolchain.
+  `/usr/local/lib/heic-ios18-fix` using the normal Debian/Ubuntu toolchain.
 * PHP and FPM wiring is **not implemented**. The script detects `/RunCloud`,
   refuses to guess at RunCloud's paths, and prints a `TODO(runcloud)` message.
 
@@ -32,14 +32,14 @@ server. They are marked `TODO(runcloud)` in `heic-fix.sh`:
 ## What works today
 
 ```bash
-sudo /opt/heic-ios18-fix/heic-fix.sh build -y
+sudo /usr/local/lib/heic-ios18-fix/heic-fix.sh build -y
 ```
 
 This gives you:
 
-* `/opt/heic-ios18-fix/heif/bin/heif-dec` — the isolated decoder, usable from a
+* `/usr/local/lib/heic-ios18-fix/heif/bin/heif-dec` — the isolated decoder, usable from a
   WordPress upload hook,
-* `/opt/heic-ios18-fix/imagemagick/bin/magick` — ImageMagick 7, with libheif
+* `/usr/local/lib/heic-ios18-fix/imagemagick/bin/magick` — ImageMagick 7, with libheif
   linked statically into MagickCore,
 * private `libheif-heicfix.so.1` / `libde265-heicfix.so.0` for the diagnostic
   tools.
@@ -47,7 +47,7 @@ This gives you:
 You can convert an upload with `heif-dec` without touching PHP's Imagick:
 
 ```bash
-/opt/heic-ios18-fix/heif/bin/heif-dec --quiet photo.heic photo.jpg
+/usr/local/lib/heic-ios18-fix/heif/bin/heif-dec --quiet photo.heic photo.jpg
 ```
 
 ## Adding RunCloud PHP support

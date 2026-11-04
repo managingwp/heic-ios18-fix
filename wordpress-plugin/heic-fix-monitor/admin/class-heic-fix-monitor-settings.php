@@ -76,9 +76,9 @@ final class Heic_Fix_Monitor_Settings {
 	public static function defaults() {
 		return array(
 			'php_versions'        => array(),
-			'prefix'              => '/opt/heic-ios18-fix',
+			'prefix'              => '/usr/local/lib/heic-ios18-fix',
 			'sample_path'         => '',
-			'check_binary'        => '/opt/heic-ios18-fix/heic-fix.sh',
+			'check_binary'        => '/usr/local/lib/heic-ios18-fix/heic-fix.sh',
 			'check_enabled'       => 1,
 			'filesystem_enabled'  => 1,
 			'decode_enabled'      => 1,

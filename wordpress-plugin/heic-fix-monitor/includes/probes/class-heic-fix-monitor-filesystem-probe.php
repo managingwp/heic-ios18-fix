@@ -41,7 +41,7 @@ final class Heic_Fix_Monitor_Filesystem_Probe implements Heic_Fix_Monitor_Probe_
 			);
 		}
 
-		$prefix = isset( $settings['prefix'] ) ? rtrim( (string) $settings['prefix'], '/' ) : '/opt/heic-ios18-fix';
+		$prefix = isset( $settings['prefix'] ) ? rtrim( (string) $settings['prefix'], '/' ) : '/usr/local/lib/heic-ios18-fix';
 		if ( '' === $prefix || '/' !== substr( $prefix, 0, 1 ) ) {
 			return Heic_Fix_Monitor_Probe_Result::make(
 				'filesystem_elf',

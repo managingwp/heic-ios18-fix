@@ -23,7 +23,7 @@ description: All heic-fix.sh commands, options, exit codes and quiet output.
 | Option | Meaning |
 | --- | --- |
 | `--php X.Y` | Target PHP version. Repeatable. Default: every version under `/etc/php`. |
-| `--prefix DIR` | Install prefix. Default `/opt/heic-ios18-fix`. |
+| `--prefix DIR` | Install prefix. Default `/usr/local/lib/heic-ios18-fix`, which every site user can read. A prefix under `/opt` or `/root` is usually unreadable by PHP-FPM users; the script warns instead of failing when you choose one. |
 | `--sample FILE` | HEIC used to prove decoding. Default `samples/failure_magick.HEIC`. |
 | `--system-libde265` | Link against the distro libde265 instead of building one. |
 | `--jobs N`, `-j N` | Parallel build jobs. Default `nproc`. |
@@ -77,6 +77,18 @@ sudo LIBHEIF_VERSION=v1.23.7 IMAGEMAGICK_VERSION=7.1.2-34 ./heic-fix.sh build -y
 The minimum is enforced even when you override, because libheif below 1.18.2
 does not implement the iOS 18 `tmap` handling.
 
+## Prefix overrides
+
+Two environment variables change which prefixes the script knows about. They
+exist for containers and tests; you rarely need them:
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `HEIC_FIX_DEFAULT_PREFIX` | `/usr/local/lib/heic-ios18-fix` | Prefix used when `--prefix` is not given. |
+| `HEIC_FIX_LEGACY_PREFIX` | `/opt/heic-ios18-fix` | The old location the migration hint looks for. |
+
+`--prefix` always wins over `HEIC_FIX_DEFAULT_PREFIX`.
+
 ## Examples
 
 ```bash
@@ -90,5 +102,5 @@ sudo ./heic-fix.sh php --php 8.1 --php 8.2 --php 8.3 -y
 sudo ./heic-fix.sh verify --php 8.3 --sample /path/to/photo.HEIC
 
 # Monitoring
-/opt/heic-ios18-fix/heic-fix.sh check -q --php 8.3
+/usr/local/lib/heic-ios18-fix/heic-fix.sh check -q --php 8.3
 ```

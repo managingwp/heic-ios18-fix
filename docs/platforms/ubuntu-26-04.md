@@ -112,8 +112,8 @@ install the prefix.
 Roll it back per PHP version and remove the prefix:
 
 ```bash
-sudo /opt/heic-ios18-fix/heic-fix.sh rollback --php 8.5
-sudo rm -rf /opt/heic-ios18-fix
+sudo /usr/local/lib/heic-ios18-fix/heic-fix.sh rollback --php 8.5
+sudo rm -rf /usr/local/lib/heic-ios18-fix
 sudo rm -f /etc/php/8.5/mods-available/imagick-heic.ini
 sudo apt install libheif-plugin-libde265
 sudo systemctl reload php8.5-fpm
