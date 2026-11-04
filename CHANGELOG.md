@@ -33,6 +33,20 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+* PHP startup failed with `Unable to load dynamic library
+  '/opt/heic-ios18-fix/php/8.x/imagick.so' ... Permission denied` on GridPane.
+  `/opt` carries an ACL entry (`group:GridPane-System-Users:---`) that
+  overrides the `0755` mode, so site users could not traverse a correct
+  installation. The default prefix is now `/usr/local/lib/heic-ios18-fix`,
+  which every site user can read; `--prefix` still selects another location,
+  and an existing `/opt` build is reported with a migration path instead of
+  being moved or modified. See
+  [Troubleshooting](docs/troubleshooting.md#permission-denied-loading-imagickso).
+* `build`, `php` and `enable` now check that a non-owner can traverse the
+  prefix and read every runtime file before reporting success, including ACL
+  entries that deny access despite a readable mode. The check fails on the
+  default prefix and warns on a caller-chosen one; it never changes
+  permissions.
 * Plugin download page now uses the Docusaurus docs layout, so the documentation
   sidebar is available.
 * GD could capture ImageMagick's `heif_*` calls on Ubuntu 22.04 with PHP 8.5.
@@ -46,6 +60,15 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+* Default install prefix moved from `/opt/heic-ios18-fix` to
+  `/usr/local/lib/heic-ios18-fix`, because PHP-FPM and WP-CLI must be able to
+  read the extension as the site's system user. `--prefix DIR` still installs
+  anywhere; `HEIC_FIX_DEFAULT_PREFIX` and `HEIC_FIX_LEGACY_PREFIX` override the
+  two known locations for containers and tests.
+* `heic-fix.sh` reports an existing `/opt/heic-ios18-fix` installation once per
+  run and explains that the build must be rebuilt at the new prefix: the
+  extension embeds absolute rpaths, so copying files does not migrate it. The
+  old prefix is never modified.
 * Documentation site migrated from Jekyll/Cayman to **Docusaurus 3.10** with a
   sidebar and automatic previous/next navigation.
 * GitHub Pages now deploys from the `Deploy docs` GitHub Actions workflow.

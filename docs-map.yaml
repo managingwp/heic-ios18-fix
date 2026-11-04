@@ -9,10 +9,14 @@ sidebar: sidebars.js
 commands:
   - ./heic-fix.sh --help
 
-# --latest=false is a `gh release create` flag used by the release workflow, not
-# a flag of heic-fix.sh.
+# Flags that appear in the docs but belong to another command. --latest=false is
+# a `gh release create` flag in the release workflow; --audit belongs to
+# tests/check-default-prefix.sh; --memory-swap belongs to `docker run` in the
+# bounded test matrix. None of them is a flag of heic-fix.sh.
 ignore_flags:
   - --latest
+  - --audit
+  - --memory-swap
 
 # Repo paths the docs are allowed to reference. build/ and .docusaurus/ are
 # generated, and node_modules/ is never referenced, so none of them are listed.

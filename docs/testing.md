@@ -25,6 +25,43 @@ check (AFFECTED) → build → build again (idempotent) → php → verify
 → enable → check/verify (OK)
 ```
 
+## Site-user access tests
+
+PHP-FPM and WP-CLI do not run as root, so the container test also proves the
+runtime is usable by an ordinary account:
+
+- every runtime path under the prefix is root owned, not group/other writable,
+  and readable/traversable by a non-owner, including in-prefix `ldd`
+  dependencies;
+- two accounts with different primary groups decode
+  `samples/failure_magick.HEIC` with Imagick alone and with `gd.so` loaded first;
+- an unreadable default prefix is refused by `enable` instead of being enabled.
+
+`tests/check-default-prefix.sh` covers the surrounding behaviour without a
+build: the documented default, an explicit `--prefix`, exactly one legacy hint
+for a `/opt` installation, silence when the caller chose a prefix, and that
+neither fixture is modified. Its `--audit` mode fails when a file still
+mentions the legacy prefix outside the documented migration and
+backwards-compatibility allowlist.
+
+```bash
+bash tests/check-default-prefix.sh --audit
+```
+
+## Bounded matrix
+
+`tests/run-prefix-matrix.sh` runs the three CI combinations one after another
+with a CPU and memory ceiling, records each container in
+`.opencode/docker-instances.log`, and fails if a project container is still
+running:
+
+```bash
+CPU_LIMIT=2 MEM_LIMIT=4g JOBS=2 bash tests/run-prefix-matrix.sh
+```
+
+The default ceiling is 2 CPUs and 6 GB with matching `--memory-swap`, so a
+build spike is killed inside the container rather than on the host.
+
 Two samples are mandatory. `SAMPLE` is the generated fixture; the checked-in
 `samples/failure_magick.HEIC` is always used for the collision check, because a
 generated HEIC decodes on the old libheif and cannot prove the iOS 18 fix.
@@ -104,6 +141,8 @@ The script must stay clean. The build steps are written for `bash`, not `sh`.
 - CLI and FPM both report ImageMagick 7.
 - Rollback restores stock imagick; enable restores the private extension.
 - A second `build` is idempotent.
+- The installed runtime is readable by two unprivileged accounts, and an
+  unreadable prefix is refused.
 
 ## Docs build
 

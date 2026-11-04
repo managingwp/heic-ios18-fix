@@ -11,8 +11,14 @@ RunCloud support is **partial**:
 
 * `build` works. It compiles libde265, libheif and ImageMagick 7 into
   `/usr/local/lib/heic-ios18-fix` using the normal Debian/Ubuntu toolchain.
-* PHP and FPM wiring is **not implemented**. The script detects `/RunCloud`,
+  PHP and FPM wiring is **not implemented**. The script detects `/RunCloud`,
   refuses to guess at RunCloud's paths, and prints a `TODO(runcloud)` message.
+
+Whatever prefix you choose must be readable by the RunCloud site users, because
+PHP loads `imagick.so` as that account rather than as root. The default
+`/usr/local/lib/heic-ios18-fix` is world readable and root owned; a prefix under
+`/opt` or `/root` may not be traversable. See
+[How it works](../how-it-works.md#site-user-access).
 
 ## Unverified paths
 
